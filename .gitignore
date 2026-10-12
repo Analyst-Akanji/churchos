@@ -5,3 +5,7 @@ dist
 *.log
 .DS_Store
 .vercel
+
+# raw phone photos (large). Optimised copies go in src/assets/hero
+photos/*
+!photos/.gitkeep

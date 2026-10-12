@@ -58,6 +58,17 @@ supabase/migrations/      the database (0001 to 0007)
 supabase/bootstrap.sql    one-time first admin setup
 ```
 
+
+## 4b. Homepage photos (full-bleed rotating hero)
+The homepage hero rotates through photos from your church services, fading from one to the next. Nothing to configure:
+1. Copy 4 to 6 of your best landscape service photos (.jpg, .png or .webp) into the `photos/` folder. Wide shots with space at the left work best, because the headline sits on the left.
+2. Run `npm run images`. Each photo becomes a small 1920x1080 WebP in `src/assets/hero/` (typically under 250 KB, so the site stays fast on mobile data).
+3. Commit and push. The second photo is also used in the "About" section.
+iPhone tip: Settings > Camera > Formats > "Most Compatible" saves JPG instead of HEIC.
+Photos of identifiable children need a parent's or guardian's permission before they go on a public website.
+
+Edit the homepage words, ministries, social links, and optional sections (giving, stats, testimonies) in `src/config/site.ts`. Add your logo as `public/logo.png` (square, transparent background) and it replaces the cross mark automatically.
+
 ## 5. What is built, and what is next
 **Working in this scaffold:** sign-in and invite linking; roles; members; quarters, classes, enrolment; session editor (attendance, punctuality, memory verse, Bible reading, participation, visitors, class offering) that works offline; submit, reopen, lock; offering verification and voiding; live leaderboard and top three; quarter close with frozen grades and ranks; services, headcount, income with verification; geofenced member check-in (offline-capable) with usher review; events, sermons, announcements; public website; settings.
 

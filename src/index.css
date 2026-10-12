@@ -6,3 +6,9 @@ html, body, #root { min-height: 100%; }
 body { @apply bg-gray-50 text-gray-900 antialiased; -webkit-tap-highlight-color: transparent; }
 input, select, textarea, button { font: inherit; }
 @media print { .no-print { display: none !important; } body { background: white; } }
+
+/* slow zoom on the active hero photo */
+@keyframes hero-zoom { from { transform: scale(1); } to { transform: scale(1.08); } }
+.hero-zoom { animation: hero-zoom 9s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) { .hero-zoom { animation: none; } }
+h1, h2, h3 { text-wrap: balance; }

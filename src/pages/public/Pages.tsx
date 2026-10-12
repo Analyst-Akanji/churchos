@@ -9,7 +9,7 @@ import type { EventRow, SermonRow } from '@/types/db';
 function Section({ title, intro, children }: { title: string; intro?: string; children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
-      <h1 className="text-3xl font-bold text-brand-900">{title}</h1>
+      <h1 className="font-serif text-3xl font-bold text-brand-900 md:text-4xl">{title}</h1>
       {intro && <p className="mt-2 text-gray-600">{intro}</p>}
       <div className="mt-8">{children}</div>
     </div>
