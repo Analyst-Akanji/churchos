@@ -32,7 +32,7 @@ export function useMembersLite() {
   return useQuery({
     queryKey: ['members-lite', assembly?.id], enabled: !!assembly && isStaff,
     queryFn: () => withCache(`members-lite:${assembly!.id}`, () =>
-      q<Pick<Member, 'id' | 'first_name' | 'last_name' | 'age_group' | 'user_id' | 'phone'>[]>(
-        supabase.from('members').select('id, first_name, last_name, age_group, user_id, phone').eq('assembly_id', assembly!.id).neq('status', 'archived').order('last_name').order('first_name').limit(2000))),
+      q<Pick<Member, 'id' | 'first_name' | 'last_name' | 'age_group' | 'user_id' | 'phone' | 'whatsapp'>[]>(
+        supabase.from('members').select('id, first_name, last_name, age_group, user_id, phone, whatsapp').eq('assembly_id', assembly!.id).neq('status', 'archived').order('last_name').order('first_name').limit(2000))),
   });
 }

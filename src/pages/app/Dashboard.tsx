@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, CalendarCheck, GraduationCap, HandCoins, MapPin, UserCircle } from 'lucide-react';
+import { BookOpen, CalendarCheck, UserPlus, GraduationCap, HandCoins, MapPin, UserCircle } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { supabase, q } from '@/lib/supabase';
 import { withCache } from '@/lib/offline/cache';
 import { fmtDate, fmtTime } from '@/lib/format';
+import { usePendingRegistrations, type RegistrationRequest } from '@/lib/registrations';
 import { ProgrammeDays } from '@/components/ProgrammeBoard';
 import { addDays, toISO, type ProgrammeItem } from '@/lib/programme';
 import { Button, Card, ErrorBox, Field, Input, PageHeader, Spinner } from '@/components/ui';
@@ -24,10 +25,10 @@ function ClaimInvite() {
     toast.ok('Account linked. Welcome!'); await reload();
   }
   return (
-    <Card title="Link your account to your church record">
-      <p className="mb-4 text-sm text-gray-600">Your church office gives each member a short invite code. Enter it once to connect this login to your member record. If you do not have one yet, ask the church secretary.</p>
+    <Card title="Activate your account">
+      <p className="mb-4 text-sm text-gray-600">Enter the activation code the church office sent to your WhatsApp. It connects this login to your member record. If you have not received one yet, please wait for the office to approve your registration.</p>
       <form onSubmit={submit} className="max-w-sm space-y-4">
-        <Field label="Invite code"><Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} maxLength={8} placeholder="e.g. K7M2QX9P" required /></Field>
+        <Field label="Activation code"><Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} maxLength={8} placeholder="e.g. K7M2QX9P" required /></Field>
         {err != null && <ErrorBox error={err} />}
         <Button type="submit" loading={busy}>Link my account</Button>
       </form>
@@ -47,6 +48,11 @@ export default function Dashboard() {
     }),
   });
 
+  const myReg = useQuery({
+    queryKey: ['my-registration', a.user?.id], enabled: !!a.user && !a.member,
+    queryFn: async () => (await q<RegistrationRequest[]>(supabase.from('registration_requests').select('*').eq('user_id', a.user!.id)))[0] ?? null,
+  });
+  const pending = usePendingRegistrations();
   const week = useQuery({
     queryKey: ['member-week', a.assembly?.id], enabled: !!a.assembly && !!a.member,
     queryFn: () => withCache(`member-week:${a.assembly!.id}`, () => {
@@ -63,7 +69,20 @@ export default function Dashboard() {
   });
 
   if (!a.member) {
-    return (<><PageHeader title="Welcome" subtitle={a.user?.email ?? ''} /><ClaimInvite /></>);
+    const r = myReg.data;
+    return (
+      <>
+        <PageHeader title="Welcome" subtitle={a.user?.email ?? ''} />
+        {r && (
+          <div className={`mb-4 rounded-xl p-4 text-sm ${r.status === 'rejected' ? 'bg-red-50 text-red-900' : r.status === 'approved' ? 'bg-emerald-50 text-emerald-900' : 'bg-sky-50 text-sky-900'}`}>
+            {r.status === 'pending' && <><div className="font-semibold">Registration received, {r.first_name}.</div><div>The church office will review it and send an activation code to your WhatsApp ({r.whatsapp}). Enter it below when it arrives.</div></>}
+            {r.status === 'approved' && <><div className="font-semibold">You are approved, {r.first_name}!</div><div>Check your WhatsApp for the activation code, then enter it below. If it has not arrived, contact the church office.</div></>}
+            {r.status === 'rejected' && <><div className="font-semibold">We could not approve this registration.</div><div>Please contact the church office for help.</div></>}
+          </div>
+        )}
+        {r?.status !== 'rejected' && <ClaimInvite />}
+      </>
+    );
   }
   return (
     <>
@@ -86,6 +105,10 @@ export default function Dashboard() {
         {(a.isSsLead || a.isClassStaff) && (
           <Card title="Sunday school"><p className="mb-3 text-sm text-gray-600">{a.isSsLead ? 'See every class, attendance, offerings and the leaderboard.' : 'Mark attendance, scores and record your class offering.'}</p>
             <Link to="/app/sunday-school" className="inline-flex items-center gap-2 rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-800"><BookOpen className="h-4 w-4" />Open Sunday school</Link></Card>
+        )}
+        {a.isOffice && (pending.data ?? 0) > 0 && (
+          <Card title="New registrations"><p className="mb-3 text-sm text-gray-600">{pending.data} {pending.data === 1 ? 'person is' : 'people are'} waiting for approval.</p>
+            <Link to="/app/registrations" className="inline-flex items-center gap-2 rounded-lg bg-gold-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-gold-600"><UserPlus className="h-4 w-4" />Review registrations</Link></Card>
         )}
         {(a.isOffice || a.isFinance) && (
           <Card title="Services and income"><p className="mb-3 text-sm text-gray-600">Record the service, headcount and weekly income.</p>

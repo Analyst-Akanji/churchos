@@ -11,7 +11,7 @@ export interface AssemblyLocation { id: string; assembly_id: string; name: strin
 export interface Member {
   id: string; assembly_id: string; user_id: string | null; member_no: string | null; first_name: string; last_name: string;
   other_names: string | null; gender: 'male' | 'female' | null; date_of_birth: string | null; wedding_anniversary: string | null;
-  age_group: AgeGroup; phone: string | null; email: string | null; address: string | null; status: string; join_date: string | null;
+  age_group: AgeGroup; phone: string | null; whatsapp: string | null; email: string | null; removed_at?: string | null; removal_reason?: string | null; address: string | null; status: string; join_date: string | null;
 }
 export interface UserRoleRow { id: string; assembly_id: string; user_id: string; role: Role }
 export interface ClassStaffRow { id: string; assembly_id: string; class_id: string; member_id: string; staff_role: 'teacher' | 'secretary' | 'assistant'; is_active: boolean }

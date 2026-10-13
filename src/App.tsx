@@ -6,7 +6,7 @@ import { AppShell } from './components/AppShell';
 import { PublicLayout } from './components/PublicLayout';
 import Home from './pages/public/Home';
 import { About, ContactPage, EventsPage, SermonsPage, ServicesPage, VisitPage } from './pages/public/Pages';
-import { Login, Register } from './pages/auth/Auth';
+import { ForgotPassword, Login, Register, ResetPassword } from './pages/auth/Auth';
 import { Spinner } from './components/ui';
 
 const Dashboard = lazy(() => import('./pages/app/Dashboard'));
@@ -29,6 +29,7 @@ const Programme = lazy(() => import('./pages/admin/Programme'));
 const MyAttendance = lazy(() => import('./pages/app/MyAttendance'));
 const MyProgress = lazy(() => import('./pages/app/MyProgress'));
 const Profile = lazy(() => import('./pages/app/Profile'));
+const Registrations = lazy(() => import('./pages/admin/Registrations'));
 
 function MissingConfig() {
   return (
@@ -55,6 +56,8 @@ export default function App() {
       </Route>
       <Route path="login" element={<Login />} />
       <Route path="register" element={<Register />} />
+      <Route path="forgot-password" element={<ForgotPassword />} />
+      <Route path="reset-password" element={<ResetPassword />} />
 
       <Route path="app" element={<RequireAuth />}>
         <Route element={<AppShell />}>
@@ -85,6 +88,7 @@ export default function App() {
           <Route element={<RequireAccess allow={['office']} />}>
             <Route path="content/:kind" element={<ContentManager />} />
             <Route path="programme" element={<Programme />} />
+            <Route path="registrations" element={<Registrations />} />
           </Route>
           <Route element={<RequireAccess allow={['admin']} />}>
             <Route path="roles" element={<Roles />} />

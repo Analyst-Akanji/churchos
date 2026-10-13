@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        name: 'ChurchOS',
-        short_name: 'ChurchOS',
-        description: 'Church management: Sunday school, attendance, services and giving.',
+        name: 'GOFAMINT Mount Zion Sanctuary',
+        short_name: 'GOFAMINT',
+        description: 'GOFAMINT Mount Zion Sanctuary: Sunday school, attendance, programmes and church life.',
         theme_color: '#231646',
         background_color: '#ffffff',
         display: 'standalone',

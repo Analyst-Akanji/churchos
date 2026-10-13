@@ -15,7 +15,7 @@ interface Ctx {
   classStaff: ClassStaffRow[];
   isAdmin: boolean; isOffice: boolean; isFinance: boolean; isSsLead: boolean; isUsher: boolean; isClassStaff: boolean; isStaff: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>;
+  signUp: (email: string, password: string, details?: Record<string, string>) => Promise<{ needsConfirmation: boolean }>;
   signOut: () => Promise<void>;
   reload: () => Promise<void>;
 }
@@ -83,8 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw new Error(error.message);
       },
-      signUp: async (email, password) => {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+      signUp: async (email, password, details) => {
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: details } });
         if (error) throw new Error(error.message);
         return { needsConfirmation: !data.session };
       },

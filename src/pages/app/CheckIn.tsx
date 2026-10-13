@@ -143,7 +143,7 @@ export default function CheckInPage() {
       </Card>
 
       <Modal open={consent} title="Share your location once?" onClose={() => setConsent(false)}>
-        <p className="text-sm text-gray-700">ChurchOS will read your phone's location <strong>one time, right now</strong>, only to confirm you are at church. It does not track you afterwards. The exact coordinates are deleted after 30 days.</p>
+        <p className="text-sm text-gray-700">This app will read your phone's location <strong>one time, right now</strong>, only to confirm you are at church. It does not track you afterwards. The exact coordinates are deleted after 30 days.</p>
         <div className="mt-5 flex gap-2"><Button onClick={checkIn}>Allow and check in</Button><Button variant="secondary" onClick={() => setConsent(false)}>Cancel</Button></div>
       </Modal>
     </>

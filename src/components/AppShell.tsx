@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { BookOpen, CalendarCheck, CalendarClock, CalendarDays, GraduationCap, UserCircle, Church, ClipboardList, Home, LogOut, MapPin, Menu, Megaphone, Settings, ShieldCheck, Users, X, HandCoins } from 'lucide-react';
+import { UserCheck, BookOpen, CalendarCheck, CalendarClock, CalendarDays, GraduationCap, UserCircle, Church, ClipboardList, Home, LogOut, MapPin, Menu, Megaphone, Settings, ShieldCheck, Users, X, HandCoins } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/auth/AuthProvider';
 import { SyncBadge } from './SyncBadge';
+import { Logo } from './Logo';
+import { SITE } from '@/config/site';
 import { onFlushed } from '@/lib/offline/outbox';
+import { usePendingRegistrations } from '@/lib/registrations';
 
-interface Item { to: string; label: string; icon: typeof Home; show: boolean; end?: boolean }
+interface Item { to: string; label: string; icon: typeof Home; show: boolean; end?: boolean; badge?: number }
 
 export function AppShell() {
   const a = useAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const pending = usePendingRegistrations();
 
   useEffect(() => onFlushed(() => { void qc.invalidateQueries(); }), [qc]);
 
@@ -24,6 +28,7 @@ export function AppShell() {
     { to: '/app/my-progress', label: a.isSsLead || a.isClassStaff ? 'My progress' : 'Sunday school', icon: GraduationCap, show: !!a.member },
     { to: '/app/sunday-school', label: 'Manage Sunday school', icon: BookOpen, show: a.isSsLead || a.isClassStaff },
     { to: '/app/services', label: 'Services & income', icon: HandCoins, show: a.isOffice || a.isFinance || a.isUsher },
+    { to: '/app/registrations', label: 'Registrations', icon: UserCheck, show: a.isOffice, badge: pending.data ?? 0 },
     { to: '/app/members', label: 'Members', icon: Users, show: a.isStaff },
     { to: '/app/programme', label: 'Weekly programme', icon: CalendarClock, show: a.isOffice },
     { to: '/app/content/events', label: 'Events', icon: CalendarDays, show: a.isOffice },
@@ -40,7 +45,7 @@ export function AppShell() {
       {items.map((i) => (
         <NavLink key={i.to} to={i.to} end={i.end} onClick={() => setOpen(false)}
           className={({ isActive }) => clsx('flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium', isActive ? 'bg-white/15 text-white' : 'text-brand-100 hover:bg-white/10')}>
-          <i.icon className="h-4 w-4" />{i.label}
+          <i.icon className="h-4 w-4" />{i.label}{!!i.badge && <span className="ml-auto rounded-full bg-gold-500 px-2 py-0.5 text-xs font-semibold text-white">{i.badge}</span>}
         </NavLink>
       ))}
     </nav>
@@ -48,9 +53,9 @@ export function AppShell() {
 
   const side = (
     <div className="flex h-full flex-col bg-brand-900 p-4">
-      <div className="mb-6 flex items-center gap-2 px-2 text-white">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold-500 text-lg font-bold">✝</span>
-        <div className="leading-tight"><div className="font-semibold">ChurchOS</div><div className="text-xs text-brand-200">{a.assembly?.name ?? 'Your assembly'}</div></div>
+      <div className="mb-6 flex items-center gap-3 px-2 text-white">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white"><Logo /></span>
+        <div className="leading-tight"><div className="font-serif text-lg font-bold tracking-wide">GOFAMINT</div><div className="text-xs text-brand-200">{a.assembly?.name ?? SITE.assembly}</div></div>
       </div>
       <div className="flex-1 overflow-y-auto">{links}</div>
       <button onClick={async () => { await a.signOut(); nav('/'); }} className="mt-4 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-brand-100 hover:bg-white/10">
