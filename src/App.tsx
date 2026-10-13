@@ -26,6 +26,9 @@ const ServiceDetail = lazy(() => import('./pages/admin/ServiceDetail'));
 const ContentManager = lazy(() => import('./pages/admin/ContentManager'));
 const Settings = lazy(() => import('./pages/admin/Settings'));
 const Programme = lazy(() => import('./pages/admin/Programme'));
+const MyAttendance = lazy(() => import('./pages/app/MyAttendance'));
+const MyProgress = lazy(() => import('./pages/app/MyProgress'));
+const Profile = lazy(() => import('./pages/app/Profile'));
 
 function MissingConfig() {
   return (
@@ -58,6 +61,9 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="check-in" element={<CheckInPage />} />
           <Route path="sync" element={<SyncPage />} />
+          <Route path="my-attendance" element={<MyAttendance />} />
+          <Route path="my-progress" element={<MyProgress />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="coming-soon" element={<ComingSoon />} />
 
           <Route element={<RequireAccess allow={['ssStaff']} />}>

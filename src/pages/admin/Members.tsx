@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MessageCircle, UserPlus } from 'lucide-react';
+import { MessageCircle, Trash2, UserPlus } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { supabase, q } from '@/lib/supabase';
 import { inviteCode } from '@/lib/uid';
@@ -9,6 +9,8 @@ import { Badge, Button, Card, ErrorBox, Field, Input, Modal, PageHeader, Select,
 import { useToast } from '@/components/toast';
 import { useMembersLite } from '../sundayschool/hooks';
 import type { AgeGroup, MemberInvite } from '@/types/db';
+
+interface Link { id: string; child_member_id: string }
 
 export default function Members() {
   const { assembly, isOffice, user } = useAuth();
@@ -20,6 +22,21 @@ export default function Members() {
   const [f, setF] = useState({ first_name: '', last_name: '', gender: '', age_group: 'adult' as AgeGroup, phone: '', email: '', date_of_birth: '' });
   const [err, setErr] = useState<unknown>(null); const [busy, setBusy] = useState(false);
   const [invite, setInvite] = useState<{ name: string; code: string } | null>(null);
+  const [parent, setParent] = useState<{ id: string; name: string } | null>(null);
+  const [childPick, setChildPick] = useState('');
+  const links = useQuery({
+    queryKey: ['guardian-links', parent?.id], enabled: !!parent,
+    queryFn: () => q<Link[]>(supabase.from('member_guardians').select('id, child_member_id').eq('guardian_member_id', parent!.id)),
+  });
+  async function linkChild() {
+    if (!parent || !childPick) return;
+    const { error } = await supabase.from('member_guardians').insert({ assembly_id: assembly!.id, guardian_member_id: parent.id, child_member_id: childPick, relationship: 'parent' });
+    if (error) toast.err(error.message.includes('duplicate') ? 'Already linked.' : error.message); else { setChildPick(''); void qc.invalidateQueries({ queryKey: ['guardian-links'] }); }
+  }
+  async function unlink(id: string) {
+    const { error } = await supabase.from('member_guardians').delete().eq('id', id);
+    if (error) toast.err(error.message); else void qc.invalidateQueries({ queryKey: ['guardian-links'] });
+  }
 
   const invites = useQuery({
     queryKey: ['invites', assembly?.id], enabled: !!assembly && isOffice,
@@ -61,7 +78,10 @@ export default function Members() {
                 <td className="px-3 py-2.5 capitalize">{m.age_group}</td>
                 <td className="px-3 py-2.5 text-gray-600">{m.phone ?? ''}</td>
                 <td className="px-3 py-2.5">{m.user_id ? <Badge tone="green">Linked</Badge> : codeFor.get(m.id) ? <Badge tone="amber">Code {codeFor.get(m.id)}</Badge> : <Badge>None</Badge>}</td>
-                <td className="px-3 py-2.5 text-right">{isOffice && !m.user_id && m.age_group !== 'child' && <Button size="sm" variant="secondary" onClick={() => void makeInvite(m.id, m.first_name)}>{codeFor.get(m.id) ? 'New code' : 'Invite'}</Button>}</td>
+                <td className="space-x-2 px-3 py-2.5 text-right">
+                  {isOffice && m.age_group !== 'child' && <Button size="sm" variant="ghost" onClick={() => setParent({ id: m.id, name: fullName(m) })}>Children</Button>}
+                  {isOffice && !m.user_id && m.age_group !== 'child' && <Button size="sm" variant="secondary" onClick={() => void makeInvite(m.id, m.first_name)}>{codeFor.get(m.id) ? 'New code' : 'Invite'}</Button>}
+                </td>
               </tr>
             ))}
           </Table>
@@ -81,6 +101,18 @@ export default function Members() {
           {err != null && <ErrorBox error={err} />}
           <Button type="submit" loading={busy}>Save member</Button>
         </form>
+      </Modal>
+
+      <Modal open={!!parent} title={`Children of ${parent?.name ?? ''}`} onClose={() => setParent(null)}>
+        <p className="mb-3 text-sm text-gray-600">Linked children appear in this parent's "Sunday school" screen so they can follow progress.</p>
+        <ul className="mb-4 divide-y divide-gray-100 text-sm">
+          {(links.data ?? []).length === 0 && <li className="py-2 text-gray-500">No children linked yet.</li>}
+          {(links.data ?? []).map((l) => { const c = (members.data ?? []).find((x) => x.id === l.child_member_id); return <li key={l.id} className="flex items-center justify-between py-2"><span className="font-medium">{c ? fullName(c) : 'Unknown'}</span><button onClick={() => void unlink(l.id)} className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label="Unlink"><Trash2 className="h-4 w-4" /></button></li>; })}
+        </ul>
+        <div className="flex gap-2">
+          <Select value={childPick} onChange={(e) => setChildPick(e.target.value)}><option value="">Add a child or youth</option>{(members.data ?? []).filter((c) => c.age_group !== 'adult' && c.id !== parent?.id && !(links.data ?? []).some((l) => l.child_member_id === c.id)).map((c) => <option key={c.id} value={c.id}>{fullName(c)}</option>)}</Select>
+          <Button onClick={() => void linkChild()} disabled={!childPick}>Link</Button>
+        </div>
       </Modal>
 
       <Modal open={!!invite} title="Invite code" onClose={() => setInvite(null)}>

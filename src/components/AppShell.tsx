@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { BookOpen, CalendarClock, CalendarDays, Church, ClipboardList, Home, LogOut, MapPin, Menu, Megaphone, Settings, ShieldCheck, Users, X, HandCoins } from 'lucide-react';
+import { BookOpen, CalendarCheck, CalendarClock, CalendarDays, GraduationCap, UserCircle, Church, ClipboardList, Home, LogOut, MapPin, Menu, Megaphone, Settings, ShieldCheck, Users, X, HandCoins } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/auth/AuthProvider';
 import { SyncBadge } from './SyncBadge';
@@ -20,7 +20,9 @@ export function AppShell() {
   const items: Item[] = [
     { to: '/app', label: 'Home', icon: Home, show: true, end: true },
     { to: '/app/check-in', label: 'Check in', icon: MapPin, show: !!a.member },
-    { to: '/app/sunday-school', label: 'Sunday school', icon: BookOpen, show: a.isSsLead || a.isClassStaff },
+    { to: '/app/my-attendance', label: 'My attendance', icon: CalendarCheck, show: !!a.member },
+    { to: '/app/my-progress', label: a.isSsLead || a.isClassStaff ? 'My progress' : 'Sunday school', icon: GraduationCap, show: !!a.member },
+    { to: '/app/sunday-school', label: 'Manage Sunday school', icon: BookOpen, show: a.isSsLead || a.isClassStaff },
     { to: '/app/services', label: 'Services & income', icon: HandCoins, show: a.isOffice || a.isFinance || a.isUsher },
     { to: '/app/members', label: 'Members', icon: Users, show: a.isStaff },
     { to: '/app/programme', label: 'Weekly programme', icon: CalendarClock, show: a.isOffice },
@@ -30,6 +32,7 @@ export function AppShell() {
     { to: '/app/roles', label: 'Roles', icon: ShieldCheck, show: a.isAdmin },
     { to: '/app/settings', label: 'Settings', icon: Settings, show: a.isAdmin },
     { to: '/app/coming-soon', label: 'More (soon)', icon: ClipboardList, show: a.isStaff },
+    { to: '/app/profile', label: 'My profile', icon: UserCircle, show: !!a.member },
   ].filter((i) => i.show);
 
   const links = (

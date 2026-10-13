@@ -1,17 +1,15 @@
 import { CalendarClock, MapPin } from 'lucide-react';
-import { clock, dayLabel, groupByDay, timeRange, usePublicProgramme } from '@/lib/programme';
+import { clock, dayLabel, groupByDay, timeRange, usePublicProgramme, type ProgrammeItem } from '@/lib/programme';
 import { Spinner } from './ui';
 
-/** "This week" programme, grouped by day. Fed by the church office from Weekly programme in the app. */
-export function ProgrammeBoard({ compact = false }: { compact?: boolean }) {
-  const { data, isLoading } = usePublicProgramme();
-  if (isLoading) return <Spinner />;
-  const days = groupByDay(data ?? []);
+/** Presentational: programme items grouped by day. */
+export function ProgrammeDays({ items, compact = false, emptyText }: { items: ProgrammeItem[]; compact?: boolean; emptyText?: string }) {
+  const days = groupByDay(items);
   if (days.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
         <CalendarClock className="mx-auto h-8 w-8 text-gold-500" />
-        <p className="mt-3 font-medium text-brand-900">This week's programme will be posted here soon.</p>
+        <p className="mt-3 font-medium text-brand-900">{emptyText ?? "This week's programme will be posted here soon."}</p>
         <p className="mt-1 text-sm text-gray-500">Please check back, or contact the church office.</p>
       </div>
     );
@@ -38,4 +36,11 @@ export function ProgrammeBoard({ compact = false }: { compact?: boolean }) {
       ))}
     </div>
   );
+}
+
+/** The public website's "this week": fed by the church office from Weekly programme in the app. */
+export function ProgrammeBoard({ compact = false }: { compact?: boolean }) {
+  const { data, isLoading } = usePublicProgramme();
+  if (isLoading) return <Spinner />;
+  return <ProgrammeDays items={data ?? []} compact={compact} />;
 }
