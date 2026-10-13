@@ -1,6 +1,6 @@
-// Edit this file to change the public website. Live data (services, events, sermons,
+// Edit this file to change the public website. Live data (this week's programme, events, sermons,
 // announcements) comes from the database. Everything below is static text.
-// Hero images are NOT configured here: drop optimised photos in src/assets/hero (see README).
+// Hero photos: drop optimised images in src/assets/hero. About photo: src/assets/about (see README).
 
 export const SITE = {
   shortName: 'GOFAMINT Mount Zion Sanctuary',
@@ -8,22 +8,23 @@ export const SITE = {
   assembly: 'Mount Zion Sanctuary',
   district: 'P.P.S Osogbo, Ring Road District',
   city: 'Osogbo, Osun State, Nigeria',
-  tagline: 'A family of faith, worship and good success.',
+  tagline: 'The Church with the Word for the World',
   yearTheme: { year: 2026, title: 'Our year of Good Success', anchor: 'Psalm 138:8' },
 
   hero: {
     eyebrow: 'Welcome home',
-    lines: ['Worship with us.', 'Grow in faith.'],
-    accent: 'Walk in good success.',
+    lines: ['Preach the Word.', 'Teach the Word.'],
+    accent: 'Live the Word.',
     sub: 'Join the Mount Zion Sanctuary family every Sunday for Sunday school and worship. Everyone is welcome.',
   },
+  // The three pillars come from the church's own statement of purpose.
   pillars: [
-    { icon: 'heart', title: 'Worship', note: 'Exalting God together' },
-    { icon: 'book', title: 'Grow', note: 'Growing in the Word' },
-    { icon: 'hands', title: 'Serve', note: 'Serving our community' },
+    { icon: 'church', title: 'Preach', note: 'Bringing people into God\u2019s family' },
+    { icon: 'book',   title: 'Teach',  note: 'Growing in freedom and maturity' },
+    { icon: 'heart',  title: 'Live',   note: 'Showing the new life in Christ' },
   ],
 
-  contact: { phone: '', email: '', whatsapp: '', mapUrl: '' }, // fill in
+  contact: { phone: '', email: '', whatsapp: '', mapUrl: '' }, // fill in; the top bar only appears once something is filled
   social: { facebook: '', instagram: '', youtube: '' },        // full URLs; empty ones are hidden
 
   about: [
@@ -31,6 +32,17 @@ export const SITE = {
     'We gather every Sunday for Sunday school and worship, and through the week for prayer and fellowship. Everyone is welcome.',
   ],
   aboutPoints: ['Biblical teaching', 'A warm, friendly family', 'Sunday school for every age', 'Children, youth and adults ministries', 'Opportunities to serve'],
+
+  // The church's statement of purpose, as displayed on the assembly's signboard.
+  purpose: {
+    title: 'Our statement of purpose',
+    items: [
+      { before: 'To ', key: 'preach the Word', after: ' of God and bring people into membership of God\u2019s family.' },
+      { before: 'To ', key: 'teach the Word', after: ' of God to enhance freedom, promote Christian maturity and bind the people to God for service; and' },
+      { before: 'To ', key: 'live the Word', after: ' of God to demonstrate the new life in Christ to the world, and ensure security of the believer.' },
+    ],
+    motto: 'The Church with the Word for the World',
+  },
 
   // Edit to match the assembly's real ministries. Icons: book, baby, users, heart, flower, hands, flame, music, church
   ministries: [
@@ -40,12 +52,6 @@ export const SITE = {
     { icon: 'users',  title: 'Men',           note: 'Men growing in faith and integrity.' },
     { icon: 'flower', title: 'Women',         note: 'Women encouraging one another in Christ.' },
     { icon: 'music',  title: 'Choir & Worship', note: 'Leading the congregation in praise.' },
-  ],
-
-  // Fallback programme shown until services are scheduled in the app. Replace with the real times.
-  weeklyProgramme: [
-    { day: 'Sunday', time: 'Sunday school', note: 'Classes for children, youth and adults' },
-    { day: 'Sunday', time: 'Worship service', note: 'Main service' },
   ],
 
   // Optional sections. Leave empty to hide them: they only appear when filled in.

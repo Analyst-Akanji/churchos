@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { BookOpen, CalendarDays, Church, ClipboardList, Home, LogOut, MapPin, Menu, Megaphone, Settings, ShieldCheck, Users, X, HandCoins } from 'lucide-react';
+import { BookOpen, CalendarClock, CalendarDays, Church, ClipboardList, Home, LogOut, MapPin, Menu, Megaphone, Settings, ShieldCheck, Users, X, HandCoins } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/auth/AuthProvider';
 import { SyncBadge } from './SyncBadge';
@@ -23,6 +23,7 @@ export function AppShell() {
     { to: '/app/sunday-school', label: 'Sunday school', icon: BookOpen, show: a.isSsLead || a.isClassStaff },
     { to: '/app/services', label: 'Services & income', icon: HandCoins, show: a.isOffice || a.isFinance || a.isUsher },
     { to: '/app/members', label: 'Members', icon: Users, show: a.isStaff },
+    { to: '/app/programme', label: 'Weekly programme', icon: CalendarClock, show: a.isOffice },
     { to: '/app/content/events', label: 'Events', icon: CalendarDays, show: a.isOffice },
     { to: '/app/content/sermons', label: 'Sermons', icon: Church, show: a.isOffice },
     { to: '/app/content/announcements', label: 'Announcements', icon: Megaphone, show: a.isOffice },

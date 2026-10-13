@@ -25,6 +25,7 @@ const Services = lazy(() => import('./pages/admin/Services'));
 const ServiceDetail = lazy(() => import('./pages/admin/ServiceDetail'));
 const ContentManager = lazy(() => import('./pages/admin/ContentManager'));
 const Settings = lazy(() => import('./pages/admin/Settings'));
+const Programme = lazy(() => import('./pages/admin/Programme'));
 
 function MissingConfig() {
   return (
@@ -75,7 +76,10 @@ export default function App() {
             <Route path="services/:serviceId" element={<ServiceDetail />} />
           </Route>
           <Route element={<RequireAccess allow={['staff']} />}><Route path="members" element={<Members />} /></Route>
-          <Route element={<RequireAccess allow={['office']} />}><Route path="content/:kind" element={<ContentManager />} /></Route>
+          <Route element={<RequireAccess allow={['office']} />}>
+            <Route path="content/:kind" element={<ContentManager />} />
+            <Route path="programme" element={<Programme />} />
+          </Route>
           <Route element={<RequireAccess allow={['admin']} />}>
             <Route path="roles" element={<Roles />} />
             <Route path="settings" element={<Settings />} />

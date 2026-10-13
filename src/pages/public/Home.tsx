@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Baby, BookOpen, CalendarDays, Check, Church, Clock, Flame, Flower2, Heart, HandHeart, Music, Play, Users, type LucideIcon } from 'lucide-react';
 import { SITE } from '@/config/site';
-import { HERO_IMAGES, HeroCarousel } from '@/components/HeroCarousel';
+import { HeroCarousel } from '@/components/HeroCarousel';
+import { Logo } from '@/components/Logo';
+import { ProgrammeBoard } from '@/components/ProgrammeBoard';
+import { ABOUT_IMAGE } from '@/lib/aboutImage';
+import { clock, dayLabel, groupByDay, usePublicProgramme } from '@/lib/programme';
 import { usePublicList } from '@/lib/publicData';
 import { fmtDate, fmtTime } from '@/lib/format';
 import type { AnnouncementRow, EventRow, SermonRow } from '@/types/db';
@@ -14,15 +18,13 @@ function Eyebrow({ children, center }: { children: React.ReactNode; center?: boo
   return <div className={`text-xs font-semibold uppercase tracking-[0.2em] text-gold-600 ${center ? 'text-center' : ''}`}>{children}</div>;
 }
 
-interface PublicService { id: string; title: string | null; service_type: string; starts_at: string }
-
 export default function Home() {
-  const services = usePublicList<PublicService>('v_public_services', 'starts_at', true, 3);
+  const programme = usePublicProgramme();
   const events = usePublicList<EventRow>('v_public_events', 'starts_at', true, 3);
   const sermons = usePublicList<SermonRow>('v_public_sermons', 'preached_on', false, 3);
   const news = usePublicList<AnnouncementRow>('v_public_announcements', 'publish_at', false, 2);
-  const next = services.data?.[0];
-  const aboutImage = HERO_IMAGES.length > 1 ? HERO_IMAGES[1] : HERO_IMAGES[0];
+  const nextItem = groupByDay(programme.data ?? [])[0];
+  const nextUp = nextItem?.items[0];
 
   return (
     <div>
@@ -49,25 +51,33 @@ export default function Home() {
         </div>
       </HeroCarousel>
 
-      {/* floating "this Sunday" card */}
+      {/* floating "next up" card: driven by the weekly programme the church office posts */}
       <div className="relative z-10 mx-auto -mt-20 max-w-4xl px-4">
         <div className="flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-xl ring-1 ring-black/5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div className="flex items-center gap-4">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><Clock className="h-6 w-6" /></span>
             <div>
-              <div className="font-serif text-xl font-bold text-brand-900">Join us this Sunday</div>
-              <div className="text-sm text-gray-600">{next ? `${next.title ?? 'Worship service'} · ${fmtDate(next.starts_at)} at ${fmtTime(next.starts_at)}` : `${SITE.weeklyProgramme.map((p) => p.time).join(' then ')}`}</div>
+              <div className="font-serif text-xl font-bold text-brand-900">{nextUp ? 'Next up' : 'Everyone is welcome'}</div>
+              <div className="text-sm text-gray-600">{nextUp && nextItem ? `${nextUp.title} · ${dayLabel(nextItem.date)} at ${clock(nextUp.start_time)}` : 'Join us this Sunday. We would love to meet you.'}</div>
             </div>
           </div>
-          <div className="flex gap-2"><Link to="/visit" className="rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">What to expect</Link><Link to="/services" className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Service times</Link></div>
+          <div className="flex gap-2"><a href="#this-week" className="rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">This week's programme</a><Link to="/visit" className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">What to expect</Link></div>
         </div>
       </div>
 
+      {/* THIS WEEK */}
+      <section id="this-week" className="mx-auto max-w-6xl scroll-mt-24 px-4 pt-20">
+        <Eyebrow>This week</Eyebrow>
+        <h2 className="mt-2 font-serif text-3xl font-bold text-brand-900 md:text-4xl">What's happening at Mount Zion</h2>
+        <p className="mt-2 max-w-2xl text-gray-600">Our programmes for the days ahead. Come and join us.</p>
+        <div className="mt-8"><ProgrammeBoard compact /></div>
+      </section>
+
       {/* ABOUT */}
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 md:grid-cols-2">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 to-crimson-600 shadow-lg">
-          {aboutImage ? <img src={aboutImage} alt="Worship at Mount Zion Sanctuary" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-            : <div className="flex h-full items-center justify-center text-6xl text-gold-400">✝</div>}
+        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 to-brand-600 shadow-lg">
+          {ABOUT_IMAGE ? <img src={ABOUT_IMAGE} alt="Worship at Mount Zion Sanctuary" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            : <div className="flex h-full items-center justify-center"><div className="scale-[3]"><Logo light /></div></div>}
         </div>
         <div>
           <Eyebrow>About us</Eyebrow>

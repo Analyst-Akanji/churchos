@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { Clock, Facebook, Instagram, Mail, MapPin, Menu, Phone, X, Youtube } from 'lucide-react';
+import { Facebook, Instagram, Mail, MapPin, Menu, Phone, X, Youtube } from 'lucide-react';
 import clsx from 'clsx';
 import { SITE } from '@/config/site';
 import { useAuth } from '@/auth/AuthProvider';
-import { usePublicList } from '@/lib/publicData';
-import { fmtDate, fmtTime } from '@/lib/format';
 import { Logo } from './Logo';
 
 const links = [
-  { to: '/', label: 'Home', end: true }, { to: '/about', label: 'About' }, { to: '/services', label: 'Services' },
+  { to: '/', label: 'Home', end: true }, { to: '/about', label: 'About' }, { to: '/services', label: 'This week' },
   { to: '/sermons', label: 'Sermons' }, { to: '/events', label: 'Events' }, { to: '/contact', label: 'Contact' },
 ];
 
@@ -23,21 +21,22 @@ function Socials({ className }: { className?: string }) {
 export function PublicLayout() {
   const [open, setOpen] = useState(false);
   const { session } = useAuth();
-  const next = usePublicList<{ id: string; title: string | null; starts_at: string }>('v_public_services', 'starts_at', true, 1);
-  const upcoming = next.data?.[0];
-  const nextText = upcoming ? `${upcoming.title ?? 'Next service'}: ${fmtDate(upcoming.starts_at)}, ${fmtTime(upcoming.starts_at)}` : `${SITE.weeklyProgramme[0].day}s: ${SITE.weeklyProgramme[0].time}`;
+  const hasTopBar = !!(SITE.contact.phone || SITE.contact.email || SITE.social.facebook || SITE.social.instagram || SITE.social.youtube);
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      {/* information bar */}
-      <div className="bg-brand-900 text-xs text-brand-100">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2">
-          <span className="hidden items-center gap-1.5 md:flex"><MapPin className="h-3.5 w-3.5 text-gold-400" />{SITE.district}</span>
-          {SITE.contact.phone && <a href={`tel:${SITE.contact.phone}`} className="hidden items-center gap-1.5 hover:text-white md:flex"><Phone className="h-3.5 w-3.5 text-gold-400" />{SITE.contact.phone}</a>}
-          <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-gold-400" />{nextText}</span>
-          <Socials className="hidden sm:flex" />
+      {/* contact bar: only appears once a phone, email or social link is set in src/config/site.ts */}
+      {hasTopBar && (
+        <div className="bg-brand-900 text-xs text-brand-100">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2">
+            <div className="flex items-center gap-5">
+              {SITE.contact.phone && <a href={`tel:${SITE.contact.phone}`} className="flex items-center gap-1.5 hover:text-white"><Phone className="h-3.5 w-3.5 text-gold-400" />{SITE.contact.phone}</a>}
+              {SITE.contact.email && <a href={`mailto:${SITE.contact.email}`} className="hidden items-center gap-1.5 hover:text-white sm:flex"><Mail className="h-3.5 w-3.5 text-gold-400" />{SITE.contact.email}</a>}
+            </div>
+            <Socials />
+          </div>
         </div>
-      </div>
+      )}
 
       <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
@@ -84,7 +83,7 @@ export function PublicLayout() {
             <div className="flex items-start gap-2 py-1"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold-400" /><span>{SITE.assembly}, {SITE.district}, {SITE.city}</span></div>
             {SITE.contact.phone && <div className="flex items-center gap-2 py-1"><Phone className="h-4 w-4 text-gold-400" />{SITE.contact.phone}</div>}
             {SITE.contact.email && <div className="flex items-center gap-2 py-1"><Mail className="h-4 w-4 text-gold-400" />{SITE.contact.email}</div>}
-            <div className="flex items-center gap-2 py-1"><Clock className="h-4 w-4 text-gold-400" />{nextText}</div></div>
+          </div>
         </div>
         <div className="border-t border-white/10 py-4 text-center text-xs text-brand-200">© {new Date().getFullYear()} {SITE.fullName}. {SITE.assembly}.</div>
       </footer>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import { SITE } from '@/config/site';
 import { usePublicList } from '@/lib/publicData';
+import { ProgrammeBoard } from '@/components/ProgrammeBoard';
 import { fmtDate, fmtTime } from '@/lib/format';
 import { Spinner, Empty } from '@/components/ui';
 import type { EventRow, SermonRow } from '@/types/db';
@@ -17,9 +18,27 @@ function Section({ title, intro, children }: { title: string; intro?: string; ch
 }
 
 export function About() {
+  const pu = SITE.purpose;
   return (
     <Section title="About us" intro={SITE.fullName}>
       <div className="space-y-4 text-gray-800">{SITE.about.map((t, i) => <p key={i}>{t}</p>)}</div>
+
+      <div className="mt-10 overflow-hidden rounded-2xl border border-gray-200">
+        <div className="bg-brand-900 px-6 py-5 text-center">
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400">GOFAMINT</div>
+          <h2 className="mt-1 font-serif text-2xl font-bold uppercase text-white">{pu.title}</h2>
+        </div>
+        <ol className="divide-y divide-gray-100 bg-white">
+          {pu.items.map((it, i) => (
+            <li key={it.key} className="flex gap-4 px-6 py-5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-500 font-serif text-lg font-bold text-white">{i + 1}</span>
+              <p className="pt-1 text-lg leading-relaxed text-gray-800">{it.before}<strong className="font-bold text-crimson-500">{it.key}</strong>{it.after}</p>
+            </li>
+          ))}
+        </ol>
+        <div className="bg-gold-500 px-6 py-4 text-center font-serif text-lg font-bold italic text-white">{pu.motto}</div>
+      </div>
+
       <div className="mt-8 rounded-xl bg-brand-50 p-5">
         <div className="text-xs font-semibold uppercase tracking-widest text-gold-600">{SITE.yearTheme.year} theme</div>
         <div className="mt-1 text-xl font-bold text-brand-900">{SITE.yearTheme.title}</div>
@@ -30,14 +49,9 @@ export function About() {
 }
 
 export function ServicesPage() {
-  const { data, isLoading } = usePublicList<{ id: string; title: string | null; service_type: string; starts_at: string }>('v_public_services', 'starts_at', true, 12);
   return (
-    <Section title="Service times" intro="Join us. Everyone is welcome.">
-      <h2 className="mb-3 text-lg font-semibold text-brand-900">Weekly programme</h2>
-      <div className="space-y-3">{SITE.weeklyProgramme.map((p) => <div key={p.time} className="rounded-xl border border-gray-200 p-4"><div className="font-medium">{p.day}: {p.time}</div><div className="text-sm text-gray-600">{p.note}</div></div>)}</div>
-      <h2 className="mb-3 mt-10 text-lg font-semibold text-brand-900">Upcoming</h2>
-      {isLoading ? <Spinner /> : (data ?? []).length === 0 ? <p className="text-sm text-gray-500">No upcoming services scheduled yet.</p> :
-        <div className="space-y-3">{data!.map((s) => <div key={s.id} className="rounded-xl border border-gray-200 p-4"><div className="font-medium">{s.title ?? s.service_type.replace('_', ' ')}</div><div className="text-sm text-gray-600">{fmtDate(s.starts_at)} at {fmtTime(s.starts_at)}</div></div>)}</div>}
+    <Section title="This week's programme" intro="Our programmes for the next seven days. Everyone is welcome.">
+      <ProgrammeBoard />
     </Section>
   );
 }
