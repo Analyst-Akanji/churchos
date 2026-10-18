@@ -1,0 +1,175 @@
+/* ThisSundayCard: a light card that floats on the dark homepage hero. */
+
+.tsc {
+  --tsc-paper: #f8faf9;
+  --tsc-ink: #14262a;
+  --tsc-muted: #4b6065;
+  --tsc-teal: #17695f;
+  --tsc-brass: #a9772b;
+  --tsc-track: #cbd6d3;
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 28rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-radius: 1rem;
+  background: var(--tsc-paper);
+  color: var(--tsc-ink);
+  font-family: 'Source Sans 3 Variable', 'Source Sans 3', system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.45);
+}
+
+.tsc *,
+.tsc *::before,
+.tsc *::after {
+  box-sizing: border-box;
+}
+
+.tsc-when {
+  margin: 0 0 0.5rem;
+  color: var(--tsc-teal);
+  font-size: 0.95rem;
+}
+
+.tsc-when strong {
+  font-weight: 700;
+}
+
+.tsc-title {
+  margin: 0 0 0.5rem;
+  font-family: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  font-size: 1.65rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.tsc-title--quiet {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--tsc-muted);
+}
+
+.tsc-meta {
+  margin: 0 0 1.25rem;
+  color: var(--tsc-muted);
+  font-size: 0.95rem;
+}
+
+/* Quarter progress: 13 Sundays, so a sequence is the honest shape for it. */
+.tsc-progress {
+  margin: 0 0 1rem;
+}
+
+.tsc-segments {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.tsc-seg {
+  flex: 1 1 0;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--tsc-track);
+}
+
+.tsc-seg--done {
+  background: var(--tsc-teal);
+}
+
+.tsc-seg--now {
+  height: 12px;
+  background: var(--tsc-brass);
+}
+
+/* The closing Sharing & Admonition Sunday is not a lesson, so it reads differently. */
+.tsc-seg--sharing {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--tsc-track);
+}
+
+.tsc-seg--sharing.tsc-seg--now {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--tsc-brass);
+}
+
+.tsc-theme {
+  margin: 0;
+  color: var(--tsc-muted);
+  font-size: 0.85rem;
+}
+
+.tsc-next {
+  margin: 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--tsc-track);
+  color: var(--tsc-ink);
+  font-size: 0.95rem;
+}
+
+.tsc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Loading skeleton */
+.tsc--loading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 11rem;
+}
+
+.tsc-skel {
+  display: block;
+  border-radius: 0.4rem;
+  background: var(--tsc-track);
+  animation: tsc-pulse 1.4s ease-in-out infinite;
+}
+
+.tsc-skel--line {
+  height: 0.9rem;
+  width: 55%;
+}
+
+.tsc-skel--title {
+  height: 2rem;
+  width: 90%;
+}
+
+@keyframes tsc-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tsc-skel {
+    animation: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .tsc {
+    padding: 1.25rem 1.1rem 1rem;
+    border-radius: 0.9rem;
+  }
+
+  .tsc-title {
+    font-size: 1.45rem;
+  }
+}

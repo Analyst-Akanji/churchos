@@ -15,6 +15,8 @@ const SyncPage = lazy(() => import('./pages/app/Sync'));
 const ComingSoon = lazy(() => import('./pages/app/ComingSoon'));
 const SsHome = lazy(() => import('./pages/sundayschool/SsHome'));
 const Quarters = lazy(() => import('./pages/sundayschool/Quarters'));
+const Curriculum = lazy(() => import('./pages/sundayschool/Curriculum'));
+const CurriculumForm = lazy(() => import('./pages/sundayschool/CurriculumForm'));
 const Classes = lazy(() => import('./pages/sundayschool/Classes'));
 const ClassDetail = lazy(() => import('./pages/sundayschool/ClassDetail'));
 const SessionEditor = lazy(() => import('./pages/sundayschool/SessionEditor'));
@@ -92,6 +94,9 @@ export default function App() {
           </Route>
           <Route element={<RequireAccess allow={['admin']} />}>
             <Route path="roles" element={<Roles />} />
+            <Route path="sunday-school/curriculum" element={<Curriculum />} />
+            <Route path="sunday-school/curriculum/new" element={<CurriculumForm />} />
+            <Route path="sunday-school/curriculum/:id" element={<CurriculumForm />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Route>
