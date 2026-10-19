@@ -17,6 +17,7 @@ const SsHome = lazy(() => import('./pages/sundayschool/SsHome'));
 const Quarters = lazy(() => import('./pages/sundayschool/Quarters'));
 const Curriculum = lazy(() => import('./pages/sundayschool/Curriculum'));
 const CurriculumForm = lazy(() => import('./pages/sundayschool/CurriculumForm'));
+const SsSubpage = lazy(() => import('./pages/sundayschool/SsSubpage'));
 const Classes = lazy(() => import('./pages/sundayschool/Classes'));
 const ClassDetail = lazy(() => import('./pages/sundayschool/ClassDetail'));
 const SessionEditor = lazy(() => import('./pages/sundayschool/SessionEditor'));
@@ -74,12 +75,16 @@ export default function App() {
           <Route element={<RequireAccess allow={['ssStaff']} />}>
             <Route path="sunday-school" element={<SsHome />} />
             <Route path="sunday-school/sessions/:sessionId" element={<SessionEditor />} />
-            <Route path="sunday-school/leaderboard" element={<Leaderboard />} />
+            <Route element={<SsSubpage />}>
+              <Route path="sunday-school/leaderboard" element={<Leaderboard />} />
+            </Route>
           </Route>
           <Route element={<RequireAccess allow={['ssLead']} />}>
-            <Route path="sunday-school/quarters" element={<Quarters />} />
-            <Route path="sunday-school/classes" element={<Classes />} />
-            <Route path="sunday-school/classes/:classId" element={<ClassDetail />} />
+            <Route element={<SsSubpage />}>
+              <Route path="sunday-school/quarters" element={<Quarters />} />
+              <Route path="sunday-school/classes" element={<Classes />} />
+              <Route path="sunday-school/classes/:classId" element={<ClassDetail />} />
+            </Route>
           </Route>
 
           <Route element={<RequireAccess allow={['office', 'finance', 'usher']} />}>
@@ -94,9 +99,11 @@ export default function App() {
           </Route>
           <Route element={<RequireAccess allow={['admin']} />}>
             <Route path="roles" element={<Roles />} />
-            <Route path="sunday-school/curriculum" element={<Curriculum />} />
-            <Route path="sunday-school/curriculum/new" element={<CurriculumForm />} />
-            <Route path="sunday-school/curriculum/:id" element={<CurriculumForm />} />
+            <Route element={<SsSubpage />}>
+              <Route path="sunday-school/curriculum" element={<Curriculum />} />
+              <Route path="sunday-school/curriculum/new" element={<CurriculumForm />} />
+              <Route path="sunday-school/curriculum/:id" element={<CurriculumForm />} />
+            </Route>
             <Route path="settings" element={<Settings />} />
           </Route>
         </Route>

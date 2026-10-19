@@ -1,9 +1,10 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import QuarterBuilder from '../../admin/QuarterBuilder';
 
-/** One page for both creating the next quarter (no id) and editing a quarter's topics. */
+/** One page for both setting up the next quarter (no id) and editing a quarter. */
 export default function CurriculumForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  return <QuarterBuilder quarterId={id} onSaved={() => navigate('/app/sunday-school/curriculum')} />;
+  const back = () => navigate('/app/sunday-school/curriculum');
+  return <QuarterBuilder quarterId={id} onSaved={back} onCancel={back} />;
 }

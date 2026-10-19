@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui';
 import { fetchQuarters } from '../lib/curriculumApi';
 import { daysBetween, formatShortDate, ordinal, todayInLagos } from '../lib/quarter';
 
@@ -48,13 +49,10 @@ export default function QuarterSetupBanner({
   if (!message) return null;
 
   return (
-    <div
-      className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-600 border-l-8 bg-amber-50 p-4 text-gray-900"
-      role="status"
-    >
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900" role="status">
       <p>{message}</p>
-      <Link to={setupTo} className="rounded-lg bg-brand-900 px-4 py-2 font-semibold text-white hover:opacity-90">
-        Set up next quarter
+      <Link to={setupTo}>
+        <Button size="sm">Set up next quarter</Button>
       </Link>
     </div>
   );
