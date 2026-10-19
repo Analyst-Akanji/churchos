@@ -8,9 +8,9 @@ import {
   fetchProgramme,
   saveProgramme,
   type ProgrammeItem,
-} from '../lib/sundayApi';
-import { formatSunday, isSunday, nextSundayOnOrAfter, todayInLagos } from '../lib/quarter';
-import { supabase } from '../lib/supabase';
+} from '@/lib/sundayApi';
+import { formatSunday, isSunday, nextSundayOnOrAfter, todayInLagos } from '@/lib/quarter';
+import { supabase } from '@/lib/supabase';
 
 interface Props {
   assemblyId: string;

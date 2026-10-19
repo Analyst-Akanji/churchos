@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui';
-import { fetchQuarters } from '../lib/curriculumApi';
-import { daysBetween, formatShortDate, ordinal, todayInLagos } from '../lib/quarter';
+import { fetchQuarters } from '@/lib/curriculumApi';
+import { daysBetween, formatShortDate, ordinal, todayInLagos } from '@/lib/quarter';
 
 interface Props {
   /** Where the quarter builder lives. */

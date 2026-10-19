@@ -1,4 +1,4 @@
-import { useQuarter } from '../hooks/useQuarter';
+import { useQuarter } from '@/hooks/useQuarter';
 import {
   daysBetween,
   formatShortDate,
@@ -6,7 +6,7 @@ import {
   pickUpcoming,
   todayInLagos,
   totalLessons,
-} from '../lib/quarter';
+} from '@/lib/quarter';
 
 /** A light card for the dark homepage hero: this Sunday's Sunday school lesson. */
 export default function ThisSundayCard() {

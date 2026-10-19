@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Button, Card, Field, Input, PageHeader, Select, Spinner } from '@/components/ui';
 import { useToast } from '@/components/toast';
-import { fetchQuarters, saveQuarter, type AdminQuarter } from '../lib/curriculumApi';
-import { addDays, formatShortDate, isSunday, nextSundayOnOrAfter, ordinal, todayInLagos } from '../lib/quarter';
+import { fetchQuarters, saveQuarter, type AdminQuarter } from '@/lib/curriculumApi';
+import { addDays, formatShortDate, isSunday, nextSundayOnOrAfter, ordinal, todayInLagos } from '@/lib/quarter';
 
 interface LessonDraft {
   title: string;

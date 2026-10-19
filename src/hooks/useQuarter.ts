@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { todayInLagos, type Quarter } from '../lib/quarter';
+import { supabase } from '@/lib/supabase';
+import { todayInLagos, type Quarter } from '@/lib/quarter';
 
 export type QuarterState =
   | { status: 'loading' }

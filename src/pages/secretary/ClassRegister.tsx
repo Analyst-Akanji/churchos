@@ -3,7 +3,7 @@ import '@fontsource-variable/source-sans-3';
 import '../styles/sunday-admin.css';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useQuarter } from '../hooks/useQuarter';
+import { useQuarter } from '@/hooks/useQuarter';
 import {
   fetchQuarterSheet,
   fetchRegister,
@@ -14,8 +14,8 @@ import {
   type RegisterRow,
   type RosterMember,
   type SheetSession,
-} from '../lib/sundayApi';
-import { formatShortDate, todayInLagos, type Lesson } from '../lib/quarter';
+} from '@/lib/sundayApi';
+import { formatShortDate, todayInLagos, type Lesson } from '@/lib/quarter';
 
 interface Props {
   classId: string;

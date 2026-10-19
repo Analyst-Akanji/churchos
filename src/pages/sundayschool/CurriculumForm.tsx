@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import QuarterBuilder from '../../admin/QuarterBuilder';
+import QuarterBuilder from '@/pages/admin/QuarterBuilder';
 
 /** One page for both setting up the next quarter (no id) and editing a quarter. */
 export default function CurriculumForm() {

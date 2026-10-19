@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge, Button, Card, Empty, PageHeader, Spinner } from '@/components/ui';
-import QuarterSetupBanner from '../../admin/QuarterSetupBanner';
-import { fetchQuarters, type AdminQuarter } from '../../lib/curriculumApi';
-import { formatShortDate, todayInLagos } from '../../lib/quarter';
+import QuarterSetupBanner from '@/pages/admin/QuarterSetupBanner';
+import { fetchQuarters, type AdminQuarter } from '@/lib/curriculumApi';
+import { formatShortDate, todayInLagos } from '@/lib/quarter';
 
 /** Lists the lesson curriculum by quarter, with a way to add the next one or edit any of them. */
 export default function Curriculum() {
