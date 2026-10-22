@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Phone, Mail, MapPin } from 'lucide-react';
+import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
 import { SITE } from '@/config/site';
 import { usePublicList } from '@/lib/publicData';
 import { ProgrammeBoard } from '@/components/ProgrammeBoard';
+import { VisitMessageForm } from '@/components/VisitMessageForm';
 import { fmtDate, fmtTime } from '@/lib/format';
 import { Spinner, Empty } from '@/components/ui';
 import type { EventRow, SermonRow } from '@/types/db';
@@ -101,22 +102,70 @@ export function VisitPage() {
         <li>The main worship service follows. Dress comfortably; you are welcome as you are.</li>
         <li>Our ushers will welcome you at the door and help with seating and children.</li>
       </ul>
-      <p className="mt-6 text-gray-700">To let us know you are coming, contact us on the <a href="/contact" className="font-medium text-brand-700 underline">contact page</a>.</p>
+      <div className="mt-10">
+        <VisitMessageForm />
+      </div>
+      <p className="mt-6 text-sm text-gray-600">Prefer to talk? See our <a href="/contact" className="font-medium text-brand-700 underline">contact page</a> for our phone number and address.</p>
     </Section>
   );
 }
 
-export function ContactPage() {
+/** Nigerian numbers like 0803... become +234803... so the phone dialler works from anywhere. */
+const telHref = (n: string) => {
+  const d = n.replace(/\D/g, '');
+  return `tel:${d.startsWith('0') ? `+234${d.slice(1)}` : `+${d}`}`;
+};
+
+function ContactCard({ icon, label, className = '', children }: { icon: React.ReactNode; label: string; className?: string; children: React.ReactNode }) {
   return (
-    <Section title="Contact us">
-      <div className="space-y-3 text-gray-800">
-        <div className="flex items-start gap-3"><MapPin className="mt-0.5 h-5 w-5 text-gold-500" /><div>{SITE.assembly}<br />{SITE.district}<br />{SITE.city}</div></div>
-        {SITE.contact.phone && <div className="flex items-center gap-3"><Phone className="h-5 w-5 text-gold-500" />{SITE.contact.phone}</div>}
-        {SITE.contact.email && <div className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold-500" />{SITE.contact.email}</div>}
-        {SITE.contact.whatsapp && <a className="inline-block rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white" href={`https://wa.me/${SITE.contact.whatsapp}`}>Chat on WhatsApp</a>}
-        {SITE.contact.mapUrl && <a className="block font-medium text-brand-700 underline" href={SITE.contact.mapUrl} target="_blank" rel="noreferrer">Open in Google Maps</a>}
-        {!SITE.contact.phone && !SITE.contact.email && <p className="text-sm text-gray-500">Contact details will be added soon.</p>}
+    <div className={`flex gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm ${className}`}>
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-900 text-gold-400">{icon}</div>
+      <div className="min-w-0">
+        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">{label}</div>
+        <div className="mt-1 text-gray-800">{children}</div>
       </div>
+    </div>
+  );
+}
+
+export function ContactPage() {
+  const c = SITE.contact;
+  return (
+    <Section title="Contact us" intro="Call, message or visit us. You are always welcome.">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <ContactCard icon={<MapPin size={20} />} label="Address" className="sm:col-span-2">
+          <address className="not-italic">
+            <div className="font-semibold text-brand-900">{SITE.assembly}</div>
+            <div>{c.address || SITE.city}</div>
+            <div className="text-sm text-gray-600">{SITE.district}</div>
+          </address>
+          {c.mapUrl && (
+            <a className="mt-3 inline-block rounded-lg bg-brand-900 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800" href={c.mapUrl} target="_blank" rel="noreferrer">
+              Open in Google Maps
+            </a>
+          )}
+        </ContactCard>
+
+        {c.phone && (
+          <ContactCard icon={<Phone size={20} />} label="Phone">
+            <a className="font-semibold text-brand-900 hover:underline" href={telHref(c.phone)}>{c.phone}</a>
+          </ContactCard>
+        )}
+
+        {c.whatsapp && (
+          <ContactCard icon={<MessageCircle size={20} />} label="WhatsApp">
+            <a className="font-semibold text-brand-900 hover:underline" href={`https://wa.me/${c.whatsapp}`} target="_blank" rel="noreferrer">Chat with us on WhatsApp</a>
+          </ContactCard>
+        )}
+
+        {c.email && (
+          <ContactCard icon={<Mail size={20} />} label="Email" className="sm:col-span-2">
+            <a className="break-all font-semibold text-brand-900 hover:underline" href={`mailto:${c.email}`}>{c.email}</a>
+          </ContactCard>
+        )}
+      </div>
+
+      {!c.phone && !c.email && <p className="text-sm text-gray-500">Contact details will be added soon.</p>}
     </Section>
   );
 }

@@ -34,6 +34,7 @@ const MyProgress = lazy(() => import('./pages/app/MyProgress'));
 const Profile = lazy(() => import('./pages/app/Profile'));
 const MyAssignmentsPage = lazy(() => import('./pages/app/MyAssignments'));
 const Registrations = lazy(() => import('./pages/admin/Registrations'));
+const VisitMessages = lazy(() => import('./pages/admin/VisitMessages'));
 
 function MissingConfig() {
   return (
@@ -98,6 +99,7 @@ export default function App() {
             <Route path="content/:kind" element={<ContentManager />} />
             <Route path="programme" element={<Programme />} />
             <Route path="registrations" element={<Registrations />} />
+            <Route path="messages" element={<VisitMessages />} />
           </Route>
           <Route element={<RequireAccess allow={['admin']} />}>
             <Route path="roles" element={<Roles />} />

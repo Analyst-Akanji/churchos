@@ -24,7 +24,15 @@ export const SITE = {
     { icon: 'heart',  title: 'Live',   note: 'Showing the new life in Christ' },
   ],
 
-  contact: { phone: '', email: '', whatsapp: '', mapUrl: '' }, // fill in; the top bar only appears once something is filled
+  // Shown on the Contact page and in the top bar. Any field left empty is hidden.
+  // whatsapp: country code, no + and no leading 0.
+  contact: {
+    phone: '08033578281',
+    email: 'osogbo@gofamintpps.com',
+    whatsapp: '2348033578281',
+    address: 'Opposite Galaxy Hotel, Temidire Estate Road, Ring Road, Osogbo, Osun State 230284',
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Galaxy+Hotel+Temidire+Estate+Road+Ring+Road+Osogbo',
+  },
   social: { facebook: '', instagram: '', youtube: '' },        // full URLs; empty ones are hidden
 
   about: [
