@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { UserCheck, BookOpen, CalendarCheck, CalendarClock, CalendarDays, GraduationCap, UserCircle, Church, ClipboardList, Home, LogOut, MapPin, Menu, Megaphone, Settings, ShieldCheck, Users, X, HandCoins } from 'lucide-react';
+import { UserCheck, BookOpen, CalendarCheck, CalendarClock, CalendarDays, ClipboardCheck, GraduationCap, Library, UserCircle, Church, ClipboardList, Home, LogOut, MapPin, Menu, Megaphone, Settings, ShieldCheck, Users, X, HandCoins } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/auth/AuthProvider';
 import { SyncBadge } from './SyncBadge';
@@ -26,7 +26,9 @@ export function AppShell() {
     { to: '/app/check-in', label: 'Check in', icon: MapPin, show: !!a.member },
     { to: '/app/my-attendance', label: 'My attendance', icon: CalendarCheck, show: !!a.member },
     { to: '/app/my-progress', label: a.isSsLead || a.isClassStaff ? 'My progress' : 'Sunday school', icon: GraduationCap, show: !!a.member },
+    { to: '/app/my-assignments', label: 'My assignments', icon: ClipboardCheck, show: !!a.member },
     { to: '/app/sunday-school', label: 'Manage Sunday school', icon: BookOpen, show: a.isSsLead || a.isClassStaff },
+    { to: '/app/sunday-school/curriculum', label: 'Lesson curriculum', icon: Library, show: a.isAdmin },
     { to: '/app/services', label: 'Services & income', icon: HandCoins, show: a.isOffice || a.isFinance || a.isUsher },
     { to: '/app/registrations', label: 'Registrations', icon: UserCheck, show: a.isOffice, badge: pending.data ?? 0 },
     { to: '/app/members', label: 'Members', icon: Users, show: a.isStaff },

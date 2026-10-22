@@ -4,6 +4,7 @@ import { SITE } from '@/config/site';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { Logo } from '@/components/Logo';
 import { ProgrammeBoard } from '@/components/ProgrammeBoard';
+import { OrderOfService } from '@/components/OrderOfService';
 import { ABOUT_IMAGE } from '@/lib/aboutImage';
 import { clock, dayLabel, groupByDay, usePublicProgramme } from '@/lib/programme';
 import { usePublicList } from '@/lib/publicData';
@@ -70,6 +71,7 @@ export default function Home() {
         <Eyebrow>This week</Eyebrow>
         <h2 className="mt-2 font-serif text-3xl font-bold text-brand-900 md:text-4xl">What's happening at Mount Zion</h2>
         <p className="mt-2 max-w-2xl text-gray-600">Our programmes for the days ahead. Come and join us.</p>
+        <OrderOfService />
         <div className="mt-8"><ProgrammeBoard compact /></div>
       </section>
 

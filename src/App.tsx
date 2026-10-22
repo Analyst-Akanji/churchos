@@ -32,6 +32,7 @@ const Programme = lazy(() => import('./pages/admin/Programme'));
 const MyAttendance = lazy(() => import('./pages/app/MyAttendance'));
 const MyProgress = lazy(() => import('./pages/app/MyProgress'));
 const Profile = lazy(() => import('./pages/app/Profile'));
+const MyAssignmentsPage = lazy(() => import('./pages/app/MyAssignments'));
 const Registrations = lazy(() => import('./pages/admin/Registrations'));
 
 function MissingConfig() {
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="my-attendance" element={<MyAttendance />} />
           <Route path="my-progress" element={<MyProgress />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="my-assignments" element={<MyAssignmentsPage />} />
           <Route path="coming-soon" element={<ComingSoon />} />
 
           <Route element={<RequireAccess allow={['ssStaff']} />}>

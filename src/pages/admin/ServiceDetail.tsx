@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/auth/AuthProvider';
 import { supabase, q } from '@/lib/supabase';
@@ -8,8 +8,10 @@ import { Badge, Button, Card, Empty, Field, Input, PageHeader, Select, Spinner, 
 import { useToast } from '@/components/toast';
 import { useMembersLite } from '../sundayschool/hooks';
 import type { Checkin, Fund, HeadCount, IncomeEntry, Service } from '@/types/db';
+import ServiceOrderEditor from './ServiceOrderEditor';
+import { confirmAndDeleteService } from './deleteService';
 
-type Tab = 'details' | 'headcount' | 'income' | 'checkins';
+type Tab = 'details' | 'order' | 'headcount' | 'income' | 'checkins';
 
 export default function ServiceDetail() {
   const { serviceId } = useParams();
@@ -17,7 +19,9 @@ export default function ServiceDetail() {
   const a = useAuth();
   const toast = useToast();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>('details');
+  const navigate = useNavigate();
+  const loc = useLocation();
+  const [tab, setTab] = useState<Tab>((loc.state as { tab?: Tab } | null)?.tab ?? 'details');
   const members = useMembersLite();
   const byId = new Map((members.data ?? []).map((m) => [m.id, m]));
   const refresh = () => qc.invalidateQueries();
@@ -39,6 +43,10 @@ export default function ServiceDetail() {
   const s = svc.data;
   if (!s) return <Empty title="Service not found" />;
 
+  async function removeService() {
+    const done = await confirmAndDeleteService(`${s.title ?? s.service_type.replace('_', ' ')}, ${fmtDate(s.starts_at)}`, sid, toast, qc);
+    if (done) navigate('/app/services');
+  }
   async function saveDetails() {
     const { error } = await supabase.from('services').update({ title: d.title || null, preacher_name: d.preacher_name || null, sermon_topic: d.sermon_topic || null, text_used: d.text_used || null, status: d.status, checkin_opens_at: fromLocalInput(d.opens), checkin_closes_at: fromLocalInput(d.closes) }).eq('id', sid);
     if (error) toast.err(error.message); else { toast.ok('Saved'); void refresh(); }
@@ -83,11 +91,11 @@ export default function ServiceDetail() {
   const hcTotal = h.men + h.women + h.youth_male + h.youth_female + h.children;
   const canCount = a.isUsher;
 
-  const tabs: { id: Tab; label: string }[] = [{ id: 'details', label: 'Service record' }, { id: 'headcount', label: 'Headcount' }, ...(a.isOffice || a.isFinance ? [{ id: 'income' as Tab, label: 'Income' }] : []), { id: 'checkins', label: `Check-ins (${cks.length})` }];
+  const tabs: { id: Tab; label: string }[] = [{ id: 'details', label: 'Service record' }, ...(a.isOffice ? [{ id: 'order' as Tab, label: 'Order of service' }] : []), { id: 'headcount', label: 'Headcount' }, ...(a.isOffice || a.isFinance ? [{ id: 'income' as Tab, label: 'Income' }] : []), { id: 'checkins', label: `Check-ins (${cks.length})` }];
 
   return (
     <>
-      <PageHeader title={s.title ?? s.service_type.replace('_', ' ')} subtitle={`${fmtDate(s.starts_at)} at ${fmtTime(s.starts_at)}`} actions={<Link to="/app/services"><Button variant="secondary" size="sm">All services</Button></Link>} />
+      <PageHeader title={s.title ?? s.service_type.replace('_', ' ')} subtitle={`${fmtDate(s.starts_at)} at ${fmtTime(s.starts_at)}`} actions={<div className="flex gap-2"><Link to="/app/services"><Button variant="secondary" size="sm">All services</Button></Link>{a.isAdmin && <Button variant="danger" size="sm" onClick={() => void removeService()}>Delete service</Button>}</div>} />
       <Tabs<Tab> value={tab} onChange={setTab} items={tabs} />
 
       {tab === 'details' && (
@@ -102,6 +110,8 @@ export default function ServiceDetail() {
           {a.isOffice && <div className="sm:col-span-2"><Button onClick={() => void saveDetails()}>Save</Button></div>}
         </div></Card>
       )}
+
+      {tab === 'order' && a.isOffice && <ServiceOrderEditor serviceId={sid} serviceDate={s.service_date} />}
 
       {tab === 'headcount' && (
         <Card title="Worship attendance (headcount)"><div className="grid gap-3 sm:grid-cols-5">
