@@ -8,7 +8,6 @@ import { withCache } from '@/lib/offline/cache';
 import { fmtDate, fmtTime } from '@/lib/format';
 import { usePendingRegistrations, type RegistrationRequest } from '@/lib/registrations';
 import { ProgrammeDays } from '@/components/ProgrammeBoard';
-import { MyAssignments } from '@/components/MyAssignments';
 import { addDays, toISO, type ProgrammeItem } from '@/lib/programme';
 import { Button, Card, ErrorBox, Field, Input, PageHeader, Spinner } from '@/components/ui';
 import { useToast } from '@/components/toast';
@@ -94,7 +93,6 @@ export default function Dashboard() {
           return <Link key={String(to)} to={String(to)} className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 text-center text-sm font-medium text-brand-900 shadow-sm hover:border-brand-200 hover:bg-brand-50"><I className="h-6 w-6 text-gold-600" />{String(label)}</Link>;
         })}
       </div>
-      <div className="mb-4 empty:hidden"><MyAssignments /></div>
       <div className="grid gap-4 md:grid-cols-2">
         <Card title="Next service">
           {next.isLoading ? <Spinner /> : next.data ? (
