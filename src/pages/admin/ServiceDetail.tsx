@@ -42,9 +42,10 @@ export default function ServiceDetail() {
   if (svc.isLoading) return <Spinner />;
   const s = svc.data;
   if (!s) return <Empty title="Service not found" />;
+  const service: Service = s;
 
   async function removeService() {
-    const done = await confirmAndDeleteService(`${s.title ?? s.service_type.replace('_', ' ')}, ${fmtDate(s.starts_at)}`, sid, toast, qc);
+    const done = await confirmAndDeleteService(`${service.title ?? service.service_type.replace('_', ' ')}, ${fmtDate(service.starts_at)}`, sid, toast, qc);
     if (done) navigate('/app/services');
   }
   async function saveDetails() {
