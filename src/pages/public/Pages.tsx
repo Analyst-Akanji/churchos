@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
-import { SITE } from '@/config/site';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Baby, BookOpen, Church, Flame, Flower2, HandHelping, Heart, Mail, MapPin, MessageCircle, Music, Phone, Users, type LucideIcon } from 'lucide-react';
+import { SITE, ministrySlug } from '@/config/site';
 import { usePublicList } from '@/lib/publicData';
 import { ProgrammeBoard } from '@/components/ProgrammeBoard';
 import { VisitMessageForm } from '@/components/VisitMessageForm';
@@ -166,6 +167,51 @@ export function ContactPage() {
       </div>
 
       {!c.phone && !c.email && <p className="text-sm text-gray-500">Contact details will be added soon.</p>}
+    </Section>
+  );
+}
+
+const MINISTRY_ICONS: Record<string, LucideIcon> = {
+  book: BookOpen, baby: Baby, users: Users, heart: Heart, flower: Flower2,
+  hands: HandHelping, flame: Flame, music: Music, church: Church,
+};
+
+/** One page for every ministry in SITE.ministries. Footer links open it at the right card (/ministries#youth). */
+export function MinistriesPage() {
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [hash]);
+
+  return (
+    <Section title="Our ministries" intro="There is a place for everyone at Mount Zion Sanctuary.">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {SITE.ministries.map((m) => {
+          const Icon = MINISTRY_ICONS[m.icon] ?? Church;
+          const slug = ministrySlug(m.title);
+          const active = hash === `#${slug}`;
+          return (
+            <section
+              key={slug}
+              id={slug}
+              className={`scroll-mt-28 rounded-2xl border bg-white p-5 shadow-sm ${active ? 'border-gold-500 ring-1 ring-gold-500' : 'border-gray-200'}`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-900 text-gold-400"><Icon size={20} /></span>
+                <h2 className="font-serif text-xl font-bold text-brand-900">{m.title}</h2>
+              </div>
+              <p className="mt-3 text-gray-700">{m.note}</p>
+            </section>
+          );
+        })}
+      </div>
+
+      <div className="mt-8 rounded-2xl bg-brand-50 p-5">
+        <div className="font-semibold text-brand-900">Want to join or ask about a ministry?</div>
+        <p className="mt-1 text-sm text-gray-700">Send us a message and our office will point you to the right team.</p>
+        <Link to="/visit" className="mt-3 inline-block rounded-lg bg-brand-900 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Message the office</Link>
+      </div>
     </Section>
   );
 }

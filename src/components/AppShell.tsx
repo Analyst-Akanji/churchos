@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { UserCheck, BookOpen, CalendarCheck, CalendarClock, CalendarDays, ClipboardCheck, GraduationCap, Library, UserCircle, Church, ClipboardList, Home, LogOut, MapPin, Menu, Megaphone, Settings, ShieldCheck, Users, X, HandCoins } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Inbox, UserCheck, BookOpen, CalendarCheck, CalendarClock, CalendarDays, ClipboardCheck, GraduationCap, Library, UserCircle, Church, ClipboardList, Home, LogOut, MapPin, Menu, Megaphone, Settings, ShieldCheck, Users, X, HandCoins } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/auth/AuthProvider';
 import { SyncBadge } from './SyncBadge';
@@ -9,6 +9,7 @@ import { Logo } from './Logo';
 import { SITE } from '@/config/site';
 import { onFlushed } from '@/lib/offline/outbox';
 import { usePendingRegistrations } from '@/lib/registrations';
+import { supabase } from '@/lib/supabase';
 
 interface Item { to: string; label: string; icon: typeof Home; show: boolean; end?: boolean; badge?: number }
 
@@ -18,6 +19,18 @@ export function AppShell() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const pending = usePendingRegistrations();
+  // Unread Plan a visit messages, shown as a badge for the office. The key starts with
+  // 'visit-messages' so the inbox page refreshes this count whenever it changes a message.
+  const newMessages = useQuery({
+    queryKey: ['visit-messages', 'new-count'],
+    enabled: !!a.isOffice,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { count, error } = await supabase.from('visit_messages').select('id', { count: 'exact', head: true }).eq('status', 'new');
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
 
   useEffect(() => onFlushed(() => { void qc.invalidateQueries(); }), [qc]);
 
@@ -27,10 +40,12 @@ export function AppShell() {
     { to: '/app/my-attendance', label: 'My attendance', icon: CalendarCheck, show: !!a.member },
     { to: '/app/my-progress', label: a.isSsLead || a.isClassStaff ? 'My progress' : 'Sunday school', icon: GraduationCap, show: !!a.member },
     { to: '/app/my-assignments', label: 'My assignments', icon: ClipboardCheck, show: !!a.member },
+    { to: '/app/my-classes', label: 'My class', icon: Users, show: !!a.member && a.isClassStaff && !a.isSsLead },
     { to: '/app/sunday-school', label: 'Manage Sunday school', icon: BookOpen, show: a.isSsLead || a.isClassStaff },
     { to: '/app/sunday-school/curriculum', label: 'Lesson curriculum', icon: Library, show: a.isAdmin },
     { to: '/app/services', label: 'Services & income', icon: HandCoins, show: a.isOffice || a.isFinance || a.isUsher },
     { to: '/app/registrations', label: 'Registrations', icon: UserCheck, show: a.isOffice, badge: pending.data ?? 0 },
+    { to: '/app/messages', label: 'Visit messages', icon: Inbox, show: a.isOffice, badge: newMessages.data ?? 0 },
     { to: '/app/members', label: 'Members', icon: Users, show: a.isStaff },
     { to: '/app/programme', label: 'Weekly programme', icon: CalendarClock, show: a.isOffice },
     { to: '/app/content/events', label: 'Events', icon: CalendarDays, show: a.isOffice },

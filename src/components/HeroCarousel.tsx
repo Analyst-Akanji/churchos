@@ -28,7 +28,7 @@ export function HeroCarousel({ children, interval = 6500 }: { children: ReactNod
             <div className="h-full w-full bg-[radial-gradient(circle_at_75%_30%,rgba(224,176,74,0.35),transparent_55%)]" />
           </div>
         ) : HERO_IMAGES.map((src, i) => seen.has(i) && (
-          <img key={src} src={src} alt="" aria-hidden="true" fetchPriority={i === 0 ? 'high' : 'low'} decoding="async"
+          <img key={src} src={src} alt="" aria-hidden="true" {...{ fetchpriority: i === 0 ? 'high' : 'low' }} decoding="async"
             className={clsx('absolute inset-0 h-full w-full object-cover transition-opacity duration-[1400ms] ease-in-out', i === idx ? 'opacity-100 hero-zoom' : 'opacity-0')} />
         ))}
         <div className="absolute inset-0 bg-gradient-to-r from-brand-900/90 via-brand-900/60 to-brand-900/10" />

@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { UserPlus } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { supabase, q } from '@/lib/supabase';
 import { fmtDate, fullName } from '@/lib/format';
-import { Badge, Button, Card, Empty, Field, Input, PageHeader, Select, Spinner, Table, Tabs } from '@/components/ui';
+import { Badge, Button, Card, Empty, ErrorBox, Field, Input, Modal, PageHeader, Select, Spinner, Table, Tabs } from '@/components/ui';
 import { useToast } from '@/components/toast';
 import { useActiveQuarter, useClasses, useMembersLite } from './hooks';
-import type { ClassStaffRow, SsEnrollment, SsSession } from '@/types/db';
+import type { ClassStaffRow, SsSession } from '@/types/db';
 
 type Tab = 'roster' | 'staff' | 'sessions' | 'sheet';
 
+interface RosterRow { enrollment_id: string; member_id: string; first_name: string; last_name: string; age_group: string; has_login: boolean; status: 'enrolled' | 'withdrawn' }
+interface FoundStudent { member_id: string; first_name: string; last_name: string; age_group: string; has_login: boolean; in_this_class: boolean; other_class: string | null; fits_class: boolean }
 interface SheetPoint { session_id: string; enrollment_id: string; points: number | string }
 interface SheetAtt { session_id: string; enrollment_id: string; status: 'present' | 'absent' | 'excused' }
 interface SheetBoard { enrollment_id: string; total_points: number | string; rank: number | string }
@@ -19,24 +22,29 @@ interface CurriculumLesson { lesson_date: string; lesson_number: number | null; 
 const shortDate = (iso: string) =>
   new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
+const blankStudent = { first: '', last: '', gender: '', dob: '', group: 'child', gname: '', gphone: '' };
+
 export default function ClassDetail() {
   const { classId } = useParams();
-  const { assembly, isSsLead } = useAuth();
+  const { assembly, isSsLead, member } = useAuth();
   const toast = useToast();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>('roster');
-  const [term, setTerm] = useState('');
+  const [term, setTerm] = useState(''); const [debounced, setDebounced] = useState('');
   const [pick, setPick] = useState(''); const [staffRole, setStaffRole] = useState<'teacher' | 'secretary' | 'assistant'>('teacher');
+  const [adding, setAdding] = useState(false); const [nf, setNf] = useState(blankStudent);
+  const [err, setErr] = useState<unknown>(null); const [busy, setBusy] = useState(false);
 
   const classes = useClasses(true);
   const cls = (classes.data ?? []).find((c) => c.id === classId);
   const quarter = useActiveQuarter();
-  const members = useMembersLite();
+  const members = useMembersLite(); // only loads for office staff; used for the Teachers & secretary tab
   const byId = new Map((members.data ?? []).map((m) => [m.id, m]));
 
+  // Names come from the database function, because class teachers cannot read the members table directly.
   const roster = useQuery({
     queryKey: ['roster', classId, quarter.data?.id], enabled: !!quarter.data && !!classId,
-    queryFn: () => q<SsEnrollment[]>(supabase.from('ss_enrollments').select('*').eq('class_id', classId!).eq('quarter_id', quarter.data!.id).order('created_at')),
+    queryFn: () => q<RosterRow[]>(supabase.rpc('ss_class_roster', { p_class: classId!, p_quarter: quarter.data!.id })),
   });
   const staff = useQuery({
     queryKey: ['class-staff', classId], enabled: !!classId,
@@ -45,6 +53,19 @@ export default function ClassDetail() {
   const sessions = useQuery({
     queryKey: ['class-sessions', classId, quarter.data?.id], enabled: !!quarter.data && !!classId,
     queryFn: () => q<SsSession[]>(supabase.from('ss_sessions').select('*').eq('class_id', classId!).eq('quarter_id', quarter.data!.id).order('session_date', { ascending: false })),
+  });
+
+  // A teacher or secretary assigned to this class, or the Sunday school lead, can manage its students.
+  const isMine = (staff.data ?? []).some((s) => s.member_id === member?.id);
+  const canManage = !!isSsLead || isMine;
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(term.trim()), 300);
+    return () => clearTimeout(t);
+  }, [term]);
+  const found = useQuery({
+    queryKey: ['ss-search', classId, debounced], enabled: canManage && !!quarter.data && !!classId && debounced.length >= 2,
+    queryFn: () => q<FoundStudent[]>(supabase.rpc('ss_search_students', { p_class: classId!, p_term: debounced })),
   });
 
   // Quarter sheet: weekly columns headed by each lesson. Reads the views the leaderboard already uses.
@@ -74,21 +95,42 @@ export default function ClassDetail() {
   const curriculumByDate = new Map((curriculum.data ?? []).map((l) => [l.lesson_date, l]));
   const lessonTitle = (s: SsSession) => s.lesson_title?.trim() || curriculumByDate.get(s.session_date)?.title || '';
 
-  const enrolledIds = new Set((roster.data ?? []).filter((r) => r.status === 'enrolled').map((r) => r.member_id));
-  const matches = (members.data ?? []).filter((m) => !enrolledIds.has(m.id) && fullName(m).toLowerCase().includes(term.toLowerCase())).slice(0, 8);
+  const nameByMember = new Map((roster.data ?? []).map((r) => [r.member_id, fullName(r)]));
+  const nameOf = (memberId: string) => nameByMember.get(memberId) ?? '';
 
+  const classAges = cls as (typeof cls & { min_age?: number | null; max_age?: number | null }) | undefined;
+  const ageRange = classAges && (classAges.min_age != null || classAges.max_age != null)
+    ? `This class is for ages ${classAges.min_age ?? 'any'} to ${classAges.max_age ?? 'any'}.` : '';
+
+  function openAdd() {
+    const parts = term.trim().split(/\s+/).filter(Boolean);
+    setNf({ ...blankStudent, first: parts[0] ?? '', last: parts.slice(1).join(' '), group: classAges?.max_age != null && classAges.max_age <= 12 ? 'child' : 'youth' });
+    setErr(null); setAdding(true);
+  }
+  async function addNew(e: FormEvent) {
+    e.preventDefault(); setBusy(true); setErr(null);
+    const { error } = await supabase.rpc('ss_add_student', {
+      p_class: classId!, p_first: nf.first, p_last: nf.last, p_gender: nf.gender, p_dob: nf.dob || null,
+      p_age_group: nf.group, p_guardian_name: nf.gname, p_guardian_phone: nf.gphone,
+    });
+    setBusy(false);
+    if (error) { setErr(new Error(error.message)); return; }
+    toast.ok(`${nf.first.trim()} added to ${cls?.name ?? 'the class'}`);
+    setAdding(false); setNf(blankStudent); setTerm(''); setDebounced('');
+    void qc.invalidateQueries({ queryKey: ['roster'] });
+  }
   async function enrol(memberId: string) {
-    if (!quarter.data) return;
-    const { error } = await supabase.from('ss_enrollments').upsert(
-      { assembly_id: assembly!.id, quarter_id: quarter.data.id, class_id: classId, member_id: memberId, status: 'enrolled' },
-      { onConflict: 'quarter_id,member_id' });
-    if (error) toast.err(error.message.includes('violates') ? 'This student is already in another class this quarter.' : error.message);
-    else { setTerm(''); void qc.invalidateQueries({ queryKey: ['roster'] }); }
+    const { error } = await supabase.rpc('ss_enrol_member', { p_class: classId!, p_member: memberId });
+    if (error) { toast.err(error.message); return; }
+    toast.ok('Student enrolled'); setTerm(''); setDebounced('');
+    void qc.invalidateQueries({ queryKey: ['roster'] });
   }
   async function withdraw(id: string) {
     if (!confirm('Withdraw this student from the class for this quarter?')) return;
-    const { error } = await supabase.from('ss_enrollments').update({ status: 'withdrawn' }).eq('id', id);
-    if (error) toast.err(error.message); else void qc.invalidateQueries({ queryKey: ['roster'] });
+    const { data, error } = await supabase.from('ss_enrollments').update({ status: 'withdrawn' }).eq('id', id).select('id');
+    if (error) toast.err(error.message);
+    else if (!data || data.length === 0) toast.err('Nothing was changed. You may not have permission for this class.');
+    else void qc.invalidateQueries({ queryKey: ['roster'] });
   }
   async function addStaff() {
     if (!pick) return;
@@ -100,32 +142,56 @@ export default function ClassDetail() {
     if (error) toast.err(error.message); else void qc.invalidateQueries({ queryKey: ['class-staff'] });
   }
 
-  if (classes.isLoading) return <Spinner />;
+  if (classes.isLoading || staff.isLoading) return <Spinner />;
   if (!cls) return <Empty title="Class not found" />;
+  if (!canManage) return <Empty title="This is not your class" hint="Only the teachers and secretary assigned to a class, and the Sunday school lead, can open it." />;
   const active = (roster.data ?? []).filter((r) => r.status === 'enrolled');
+
+  const tabItems: { id: Tab; label: string }[] = [
+    { id: 'roster', label: `Students (${active.length})` },
+    ...(isSsLead ? [{ id: 'staff' as Tab, label: 'Teachers & secretary' }] : []),
+    { id: 'sessions', label: 'Sessions' },
+    { id: 'sheet', label: 'Quarter sheet' },
+  ];
 
   return (
     <>
-      <PageHeader title={cls.name} subtitle={quarter.data ? `Active quarter: ${quarter.data.year} Q${quarter.data.quarter_no}` : 'No active quarter'} actions={<Link to="/app/sunday-school/classes"><Button variant="secondary">All classes</Button></Link>} />
-      <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'roster', label: `Students (${active.length})` }, { id: 'staff', label: 'Teachers & secretary' }, { id: 'sessions', label: 'Sessions' }, { id: 'sheet', label: 'Quarter sheet' }]} />
+      <PageHeader title={cls.name} subtitle={quarter.data ? `Active quarter: ${quarter.data.year} Q${quarter.data.quarter_no}` : 'No active quarter'} actions={isSsLead ? <Link to="/app/sunday-school/classes"><Button variant="secondary">All classes</Button></Link> : <Link to="/app/sunday-school"><Button variant="secondary">Back</Button></Link>} />
+      <Tabs<Tab> value={tab} onChange={setTab} items={tabItems} />
 
       {tab === 'roster' && (
         <div className="space-y-4">
-          {isSsLead && quarter.data && (
-            <Card title="Add a student">
-              <Input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Search members by name" />
-              {term && <ul className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200">
-                {matches.length === 0 && <li className="p-3 text-sm text-gray-500">No match. Add the person under Members first.</li>}
-                {matches.map((m) => <li key={m.id} className="flex items-center justify-between p-3 text-sm"><span>{fullName(m)} <Badge>{m.age_group}</Badge></span><Button size="sm" onClick={() => void enrol(m.id)}>Enrol</Button></li>)}
-              </ul>}
+          {quarter.data ? (
+            <Card title="Add a student" action={<Button size="sm" variant="secondary" onClick={openAdd}><UserPlus className="h-4 w-4" />New student</Button>}>
+              <Input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Search by name. Adults and youths who registered themselves show up here" />
+              {ageRange && <p className="mt-2 text-xs text-gray-500">{ageRange}</p>}
+              {debounced.length >= 2 && (
+                <ul className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200">
+                  {found.isLoading && <li className="p-3 text-sm text-gray-500">Searching…</li>}
+                  {!found.isLoading && (found.data ?? []).length === 0 && <li className="p-3 text-sm text-gray-500">No one found with that name.</li>}
+                  {(found.data ?? []).map((m) => (
+                    <li key={m.member_id} className="flex items-center justify-between gap-3 p-3 text-sm">
+                      <span>{fullName(m)} <Badge>{m.age_group}</Badge></span>
+                      {m.in_this_class ? <Badge tone="green">In this class</Badge>
+                        : m.other_class ? <Badge tone="amber">{`In ${m.other_class}`}</Badge>
+                        : !m.fits_class ? <Badge>Outside this class's ages</Badge>
+                        : <Button size="sm" onClick={() => void enrol(m.member_id)}>Enrol</Button>}
+                    </li>
+                  ))}
+                  {!found.isLoading && (
+                    <li className="p-3 text-sm"><button type="button" onClick={openAdd} className="font-medium text-brand-700 hover:underline">Not listed? Add them as a new student</button></li>
+                  )}
+                </ul>
+              )}
             </Card>
-          )}
+          ) : <Empty title="No active quarter" hint="Ask the Sunday school lead to activate a quarter before adding students." />}
+
           <Card>
             {roster.isLoading ? <Spinner /> : active.length === 0 ? <Empty title="No students yet" /> : (
-              <Table head={['#', 'Name', '']}>
+              <Table head={['#', 'Name', 'Group', '']}>
                 {active.map((r, i) => (
-                  <tr key={r.id}><td className="px-3 py-2.5 text-gray-500">{i + 1}</td><td className="px-3 py-2.5 font-medium">{fullName(byId.get(r.member_id)) || r.member_id.slice(0, 8)}</td>
-                    <td className="px-3 py-2.5 text-right">{isSsLead && <Button size="sm" variant="ghost" onClick={() => void withdraw(r.id)}>Withdraw</Button>}</td></tr>
+                  <tr key={r.enrollment_id}><td className="px-3 py-2.5 text-gray-500">{i + 1}</td><td className="px-3 py-2.5 font-medium">{fullName(r)}</td><td className="px-3 py-2.5 capitalize">{r.age_group}</td>
+                    <td className="px-3 py-2.5 text-right"><Button size="sm" variant="ghost" onClick={() => void withdraw(r.enrollment_id)}>Withdraw</Button></td></tr>
                 ))}
               </Table>
             )}
@@ -133,25 +199,23 @@ export default function ClassDetail() {
         </div>
       )}
 
-      {tab === 'staff' && (
+      {tab === 'staff' && isSsLead && (
         <div className="space-y-4">
-          {isSsLead && (
-            <Card title="Assign staff">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Field label="Member"><Select value={pick} onChange={(e) => setPick(e.target.value)}><option value="">Choose a member</option>{(members.data ?? []).filter((m) => m.age_group !== 'child').map((m) => <option key={m.id} value={m.id}>{fullName(m)}</option>)}</Select></Field>
-                <Field label="Role"><Select value={staffRole} onChange={(e) => setStaffRole(e.target.value as typeof staffRole)}><option value="teacher">Teacher</option><option value="secretary">Class secretary</option><option value="assistant">Assistant</option></Select></Field>
-                <div className="flex items-end"><Button onClick={() => void addStaff()} disabled={!pick}>Assign</Button></div>
-              </div>
-              <p className="mt-3 text-xs text-gray-500">The person must have linked their login (see Members, invite code) before they can open the class on their phone.</p>
-            </Card>
-          )}
+          <Card title="Assign staff">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label="Member"><Select value={pick} onChange={(e) => setPick(e.target.value)}><option value="">Choose a member</option>{(members.data ?? []).filter((m) => m.age_group !== 'child').map((m) => <option key={m.id} value={m.id}>{fullName(m)}</option>)}</Select></Field>
+              <Field label="Role"><Select value={staffRole} onChange={(e) => setStaffRole(e.target.value as typeof staffRole)}><option value="teacher">Teacher</option><option value="secretary">Class secretary</option><option value="assistant">Assistant</option></Select></Field>
+              <div className="flex items-end"><Button onClick={() => void addStaff()} disabled={!pick}>Assign</Button></div>
+            </div>
+            <p className="mt-3 text-xs text-gray-500">The person must have linked their login (see Members, invite code) before they can open the class on their phone.</p>
+          </Card>
           <Card>
             {(staff.data ?? []).length === 0 ? <Empty title="No teacher or secretary assigned" /> : (
               <Table head={['Name', 'Role', 'Login linked', '']}>
                 {staff.data!.map((s) => { const m = byId.get(s.member_id); return (
                   <tr key={s.id}><td className="px-3 py-2.5 font-medium">{fullName(m)}</td><td className="px-3 py-2.5 capitalize">{s.staff_role}</td>
                     <td className="px-3 py-2.5">{m?.user_id ? <Badge tone="green">Yes</Badge> : <Badge tone="amber">Not yet</Badge>}</td>
-                    <td className="px-3 py-2.5 text-right">{isSsLead && <Button size="sm" variant="ghost" onClick={() => void removeStaff(s.id)}>Remove</Button>}</td></tr>); })}
+                    <td className="px-3 py-2.5 text-right"><Button size="sm" variant="ghost" onClick={() => void removeStaff(s.id)}>Remove</Button></td></tr>); })}
               </Table>
             )}
           </Card>
@@ -163,7 +227,7 @@ export default function ClassDetail() {
         const ptsMap = new Map((sheetPoints.data ?? []).map((r) => [`${r.session_id}:${r.enrollment_id}`, Number(r.points)]));
         const attMap = new Map((sheetAtt.data ?? []).map((r) => [`${r.session_id}:${r.enrollment_id}`, r.status]));
         const boardMap = new Map((board.data ?? []).map((r) => [r.enrollment_id, { total: Number(r.total_points), rank: Number(r.rank) }]));
-        const students = [...active].sort((a, b) => fullName(byId.get(a.member_id)).localeCompare(fullName(byId.get(b.member_id))));
+        const students = [...active].sort((a, b) => nameOf(a.member_id).localeCompare(nameOf(b.member_id)));
         const loadingSheet = sessions.isLoading || sheetPoints.isLoading || sheetAtt.isLoading || board.isLoading;
         return (
           <Card>
@@ -187,13 +251,13 @@ export default function ClassDetail() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {students.map((r) => {
-                      const b = boardMap.get(r.id);
+                      const b = boardMap.get(r.enrollment_id);
                       const top = !!b && b.total > 0 && b.rank <= 3;
                       return (
-                        <tr key={r.id} className={top ? 'bg-amber-50' : undefined}>
-                          <th scope="row" className={`sticky left-0 z-10 whitespace-nowrap px-3 py-2 text-left font-medium ${top ? 'bg-amber-50' : 'bg-white'}`}>{fullName(byId.get(r.member_id)) || r.member_id.slice(0, 8)}</th>
+                        <tr key={r.enrollment_id} className={top ? 'bg-amber-50' : undefined}>
+                          <th scope="row" className={`sticky left-0 z-10 whitespace-nowrap px-3 py-2 text-left font-medium ${top ? 'bg-amber-50' : 'bg-white'}`}>{nameOf(r.member_id) || r.member_id.slice(0, 8)}</th>
                           {cols.map((s) => {
-                            const k = `${s.id}:${r.id}`; const st = attMap.get(k);
+                            const k = `${s.id}:${r.enrollment_id}`; const st = attMap.get(k);
                             return (
                               <td key={s.id} className={`px-2 py-2 text-center tabular-nums ${st === 'present' ? '' : 'text-gray-400'}`}>
                                 {st === 'present' ? (ptsMap.get(k) ?? 0) : st === 'absent' ? 'A' : st === 'excused' ? 'E' : '-'}
@@ -209,14 +273,14 @@ export default function ClassDetail() {
                   <tfoot className="border-t border-gray-200 text-xs text-gray-500">
                     <tr>
                       <th scope="row" className="sticky left-0 z-10 bg-white px-3 py-2 text-left font-medium">Present</th>
-                      {cols.map((s) => <td key={s.id} className="px-2 py-2 text-center tabular-nums">{students.filter((r) => attMap.get(`${s.id}:${r.id}`) === 'present').length}</td>)}
+                      {cols.map((s) => <td key={s.id} className="px-2 py-2 text-center tabular-nums">{students.filter((r) => attMap.get(`${s.id}:${r.enrollment_id}`) === 'present').length}</td>)}
                       <td colSpan={2} />
                     </tr>
                   </tfoot>
                 </table>
               </div>
             )}
-            <p className="mt-3 text-xs text-gray-500">P = points for the Sunday. A = absent, E = excused, - = not marked. Highlighted rows are the top three.</p>
+            <p className="mt-3 text-xs text-gray-500">Numbers are the points for the Sunday. A = absent, E = excused, - = not marked. Highlighted rows are the top three.</p>
           </Card>
         );
       })()}
@@ -234,6 +298,28 @@ export default function ClassDetail() {
           )}
         </Card>
       )}
+
+      <Modal open={adding} title="Add a new student" onClose={() => setAdding(false)}>
+        <form onSubmit={addNew} className="space-y-3">
+          <p className="text-sm text-gray-600">For a child or youth who is not in the church records yet and has no phone login. They are added to {cls.name} straight away. Search first, so the same child is not added twice.</p>
+          {ageRange && <p className="text-xs text-gray-500">{ageRange}</p>}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="First name"><Input required value={nf.first} onChange={(e) => setNf({ ...nf, first: e.target.value })} /></Field>
+            <Field label="Last name"><Input required value={nf.last} onChange={(e) => setNf({ ...nf, last: e.target.value })} /></Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Gender"><Select value={nf.gender} onChange={(e) => setNf({ ...nf, gender: e.target.value })}><option value="">Not set</option><option value="male">Male</option><option value="female">Female</option></Select></Field>
+            <Field label="Group"><Select value={nf.group} onChange={(e) => setNf({ ...nf, group: e.target.value })}><option value="child">Child</option><option value="youth">Youth</option></Select></Field>
+          </div>
+          <Field label="Date of birth (recommended, so the age can be checked)"><Input type="date" value={nf.dob} onChange={(e) => setNf({ ...nf, dob: e.target.value })} /></Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Parent or guardian (optional)"><Input value={nf.gname} onChange={(e) => setNf({ ...nf, gname: e.target.value })} /></Field>
+            <Field label="Their phone (optional)"><Input inputMode="tel" value={nf.gphone} onChange={(e) => setNf({ ...nf, gphone: e.target.value })} /></Field>
+          </div>
+          {err != null && <ErrorBox error={err} />}
+          <div className="flex gap-2"><Button type="submit" loading={busy}>Add and enrol</Button><Button type="button" variant="secondary" onClick={() => setAdding(false)}>Cancel</Button></div>
+        </form>
+      </Modal>
     </>
   );
 }

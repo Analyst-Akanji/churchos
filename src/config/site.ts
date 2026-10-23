@@ -67,3 +67,7 @@ export const SITE = {
   stats: [] as { value: string; label: string }[],                       // e.g. { value: '2002', label: 'Serving since' }
   testimonials: [] as { quote: string; name: string; place?: string }[],  // use real, permitted testimonies only
 };
+
+/** URL-friendly id for a ministry, e.g. 'Choir & Worship' becomes 'choir-worship'. */
+export const ministrySlug = (title: string) =>
+  title.toLowerCase().replace(/&/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');

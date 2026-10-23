@@ -5,7 +5,7 @@ import { RequireAccess, RequireAuth } from './auth/guards';
 import { AppShell } from './components/AppShell';
 import { PublicLayout } from './components/PublicLayout';
 import Home from './pages/public/Home';
-import { About, ContactPage, EventsPage, SermonsPage, ServicesPage, VisitPage } from './pages/public/Pages';
+import { About, ContactPage, EventsPage, MinistriesPage, SermonsPage, ServicesPage, VisitPage } from './pages/public/Pages';
 import { ForgotPassword, Login, Register, ResetPassword } from './pages/auth/Auth';
 import { Spinner } from './components/ui';
 
@@ -33,6 +33,7 @@ const MyAttendance = lazy(() => import('./pages/app/MyAttendance'));
 const MyProgress = lazy(() => import('./pages/app/MyProgress'));
 const Profile = lazy(() => import('./pages/app/Profile'));
 const MyAssignmentsPage = lazy(() => import('./pages/app/MyAssignments'));
+const MyClasses = lazy(() => import('./pages/sundayschool/MyClasses'));
 const Registrations = lazy(() => import('./pages/admin/Registrations'));
 const VisitMessages = lazy(() => import('./pages/admin/VisitMessages'));
 
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="sermons" element={<SermonsPage />} />
         <Route path="visit" element={<VisitPage />} />
         <Route path="contact" element={<ContactPage />} />
+        <Route path="ministries" element={<MinistriesPage />} />
       </Route>
       <Route path="login" element={<Login />} />
       <Route path="register" element={<Register />} />
@@ -73,6 +75,7 @@ export default function App() {
           <Route path="my-progress" element={<MyProgress />} />
           <Route path="profile" element={<Profile />} />
           <Route path="my-assignments" element={<MyAssignmentsPage />} />
+          <Route path="my-classes" element={<MyClasses />} />
           <Route path="coming-soon" element={<ComingSoon />} />
 
           <Route element={<RequireAccess allow={['ssStaff']} />}>
@@ -80,13 +83,13 @@ export default function App() {
             <Route path="sunday-school/sessions/:sessionId" element={<SessionEditor />} />
             <Route element={<SsSubpage />}>
               <Route path="sunday-school/leaderboard" element={<Leaderboard />} />
+              <Route path="sunday-school/classes/:classId" element={<ClassDetail />} />
             </Route>
           </Route>
           <Route element={<RequireAccess allow={['ssLead']} />}>
             <Route element={<SsSubpage />}>
               <Route path="sunday-school/quarters" element={<Quarters />} />
               <Route path="sunday-school/classes" element={<Classes />} />
-              <Route path="sunday-school/classes/:classId" element={<ClassDetail />} />
             </Route>
           </Route>
 

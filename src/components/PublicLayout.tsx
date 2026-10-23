@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Facebook, Instagram, Mail, MapPin, Menu, Phone, X, Youtube } from 'lucide-react';
 import clsx from 'clsx';
-import { SITE } from '@/config/site';
+import { SITE, ministrySlug } from '@/config/site';
 import { useAuth } from '@/auth/AuthProvider';
 import { Logo } from './Logo';
 
@@ -21,23 +21,12 @@ function Socials({ className }: { className?: string }) {
 export function PublicLayout() {
   const [open, setOpen] = useState(false);
   const { session } = useAuth();
-  const hasTopBar = !!(SITE.contact.phone || SITE.contact.email || SITE.social.facebook || SITE.social.instagram || SITE.social.youtube);
+  const { pathname, hash } = useLocation();
+  // Open each page at the top, unless the link points at a #section (the page scrolls to it itself).
+  useEffect(() => { if (!hash) window.scrollTo(0, 0); }, [pathname, hash]);
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      {/* contact bar: only appears once a phone, email or social link is set in src/config/site.ts */}
-      {hasTopBar && (
-        <div className="bg-brand-900 text-xs text-brand-100">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2">
-            <div className="flex items-center gap-5">
-              {SITE.contact.phone && <a href={`tel:${SITE.contact.phone}`} className="flex items-center gap-1.5 hover:text-white"><Phone className="h-3.5 w-3.5 text-gold-400" />{SITE.contact.phone}</a>}
-              {SITE.contact.email && <a href={`mailto:${SITE.contact.email}`} className="hidden items-center gap-1.5 hover:text-white sm:flex"><Mail className="h-3.5 w-3.5 text-gold-400" />{SITE.contact.email}</a>}
-            </div>
-            <Socials />
-          </div>
-        </div>
-      )}
-
       <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2.5">
@@ -77,12 +66,12 @@ export function PublicLayout() {
           </div>
           <div className="text-sm"><div className="mb-3 font-semibold uppercase tracking-wider text-gold-400">Quick links</div>
             {[...links.slice(1), { to: '/visit', label: 'Plan a visit' }].map((l) => <Link key={l.to} to={l.to} className="block py-1 hover:text-white">{l.label}</Link>)}</div>
-          <div className="text-sm"><div className="mb-3 font-semibold uppercase tracking-wider text-gold-400">Ministries</div>
-            {SITE.ministries.map((m) => <span key={m.title} className="block py-1">{m.title}</span>)}</div>
+          <div className="text-sm"><Link to="/ministries" className="mb-3 block font-semibold uppercase tracking-wider text-gold-400 hover:underline">Ministries</Link>
+            {SITE.ministries.map((m) => <Link key={m.title} to={`/ministries#${ministrySlug(m.title)}`} className="block py-1 hover:text-white">{m.title}</Link>)}</div>
           <div className="text-sm"><div className="mb-3 font-semibold uppercase tracking-wider text-gold-400">Contact</div>
             <div className="flex items-start gap-2 py-1"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold-400" /><span>{SITE.assembly}, {SITE.district}, {SITE.city}</span></div>
-            {SITE.contact.phone && <div className="flex items-center gap-2 py-1"><Phone className="h-4 w-4 text-gold-400" />{SITE.contact.phone}</div>}
-            {SITE.contact.email && <div className="flex items-center gap-2 py-1"><Mail className="h-4 w-4 text-gold-400" />{SITE.contact.email}</div>}
+            {SITE.contact.phone && <a href={`tel:${SITE.contact.phone}`} className="flex items-center gap-2 py-1 hover:text-white"><Phone className="h-4 w-4 text-gold-400" />{SITE.contact.phone}</a>}
+            {SITE.contact.email && <a href={`mailto:${SITE.contact.email}`} className="flex items-center gap-2 py-1 hover:text-white"><Mail className="h-4 w-4 text-gold-400" />{SITE.contact.email}</a>}
           </div>
         </div>
         <div className="border-t border-white/10 py-4 text-center text-xs text-brand-200">© {new Date().getFullYear()} {SITE.fullName}. {SITE.assembly}.</div>
