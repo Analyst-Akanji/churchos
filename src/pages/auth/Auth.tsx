@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { supabase } from '@/lib/supabase';
@@ -100,8 +100,16 @@ export function ForgotPassword() {
     e.preventDefault(); setBusy(true); setErr(null);
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/reset-password` });
     setBusy(false);
-    // Always say the same thing for unknown emails so nobody can discover who is registered.
-    if (error && /rate limit|too many/i.test(error.message)) { setErr(new Error('Too many requests. Please wait a few minutes and try again.')); return; }
+    // Supabase answers "success" for emails it does not know, so nobody can discover who is registered.
+    // That means an error here is a real problem (too many requests, or the email service is down),
+    // and the member should be told instead of waiting for an email that will never come.
+    if (error) {
+      console.error('Password reset email failed:', error.message);
+      setErr(new Error(/rate limit|too many|seconds/i.test(error.message)
+        ? 'Too many requests. Please wait a few minutes and try again.'
+        : 'We could not send the email right now. Please try again in a few minutes, or contact the church office.'));
+      return;
+    }
     setSent(true);
   }
   return (
@@ -131,6 +139,21 @@ export function ResetPassword() {
   const [ready, setReady] = useState<boolean | null>(null);   // null = still checking the link
   const [pw, setPw] = useState({ a: '', b: '' });
   const [busy, setBusy] = useState(false); const [err, setErr] = useState<unknown>(null); const [done, setDone] = useState(false);
+
+  // The reset email links straight to this page with a one-time code in the address. Swap that code for a
+  // signed-in session here, so the link never depends on Supabase's redirect list and an email app that
+  // previews the link cannot use the code up before the member taps it.
+  const verifying = useRef(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get('token_hash');
+    if (!tokenHash || params.get('type') !== 'recovery' || verifying.current) return;
+    verifying.current = true;
+    void supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' }).then(({ error }) => {
+      window.history.replaceState({}, '', '/reset-password'); // take the code out of the address bar
+      setReady(!error);
+    });
+  }, []);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => { if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') setReady(true); });

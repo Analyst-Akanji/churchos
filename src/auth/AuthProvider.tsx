@@ -5,6 +5,12 @@ import { withCache } from '@/lib/offline/cache';
 import { startOutbox } from '@/lib/offline/outbox';
 import type { Assembly, ClassStaffRow, Member, Role } from '@/types/db';
 
+// A password-reset link that lands on the wrong page still carries its tokens in the address bar.
+// Catch that here, before Supabase reads and clears them, and carry them to the reset page.
+if (typeof window !== 'undefined' && /(^|[#&])type=recovery(&|$)/.test(window.location.hash) && window.location.pathname !== '/reset-password') {
+  window.location.replace(`/reset-password${window.location.hash}`);
+}
+
 interface Ctx {
   loading: boolean;
   session: Session | null;
@@ -53,7 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setBooting(false); });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      // Safety net: if a reset link lands on any other page (for example when the address is missing from
+      // Supabase's allowed redirect list), send the member to the page where they choose a new password.
+      if (event === 'PASSWORD_RECOVERY' && window.location.pathname !== '/reset-password') window.location.replace('/reset-password');
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 

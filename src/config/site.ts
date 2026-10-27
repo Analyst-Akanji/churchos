@@ -1,5 +1,5 @@
 // Edit this file to change the public website. Live data (this week's programme, events, sermons,
-// announcements) comes from the database. Everything below is static text.
+// commsannouncements) comes from the database. Everything below is static text.
 // Hero photos: drop optimised images in src/assets/hero. About photo: src/assets/about (see README).
 
 export const SITE = {
