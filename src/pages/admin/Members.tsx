@@ -115,7 +115,9 @@ export default function Members() {
   }
 
   const inviteNum = invite ? toWaNumber(invite.m.whatsapp ?? invite.m.phone) : null;
-  const inviteMsg = invite ? activationMessage(invite.m.first_name, assembly?.name ?? 'the church', invite.code, window.location.origin) : '';
+  // The code is shown in italics (WhatsApp: _text_) so it stands out in the message.
+  const rawInviteMsg = invite ? activationMessage(invite.m.first_name, assembly?.name ?? 'the church', invite.code, window.location.origin) : '';
+  const inviteMsg = invite ? (rawInviteMsg.includes(invite.code) ? rawInviteMsg.split(invite.code).join(`_${invite.code}_`) : `${rawInviteMsg}\n\n_${invite.code}_`) : '';
 
   return (
     <>
@@ -221,6 +223,10 @@ export default function Members() {
           <p className="text-sm text-gray-600">Give this code to {invite.m.first_name}. It works once and expires in 14 days.</p>
           <div className="rounded-xl bg-brand-50 py-4 text-3xl font-bold tracking-[0.3em] text-brand-900">{invite.code}</div>
           <a href={waLink(inviteNum, inviteMsg)} target="_blank" rel="noreferrer" className={clsx('inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white')}><MessageCircle className="h-4 w-4" />{inviteNum ? `Send on WhatsApp to +${inviteNum}` : 'Share on WhatsApp'}</a>
+          <div className="space-y-2 border-t border-gray-100 pt-4">
+            <p className="text-xs text-gray-600">Then send the code on its own, as a second message. {invite.m.first_name} can press and hold that message and tap Copy to copy just the code.</p>
+            <a href={waLink(inviteNum, invite.code)} target="_blank" rel="noreferrer" className={clsx('inline-flex items-center gap-2 rounded-lg border border-emerald-600 px-4 py-2.5 text-sm font-medium text-emerald-700')}><MessageCircle className="h-4 w-4" />Send the code only</a>
+          </div>
         </div>)}
       </Modal>
     </>

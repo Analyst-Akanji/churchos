@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 
 export interface RegistrationRequest {
   id: string; assembly_id: string; user_id: string; email: string | null; first_name: string; last_name: string;
-  whatsapp: string | null; date_of_birth: string | null; status: 'pending' | 'approved' | 'rejected'; member_id: string | null;
+  whatsapp: string | null; date_of_birth: string | null; gender: 'male' | 'female' | null; status: 'pending' | 'approved' | 'rejected'; member_id: string | null;
   note: string | null; created_at: string; reviewed_at: string | null;
 }
 

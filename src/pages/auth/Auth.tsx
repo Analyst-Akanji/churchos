@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { supabase } from '@/lib/supabase';
-import { Button, Card, ErrorBox, Field, Input } from '@/components/ui';
+import { Button, Card, ErrorBox, Field, Input, Select } from '@/components/ui';
 import { toWaNumber } from '@/lib/whatsapp';
 import { env } from '@/lib/env';
 import { Logo } from '@/components/Logo';
@@ -49,17 +49,18 @@ export function Login() {
 
 export function Register() {
   const { signUp } = useAuth();
-  const [f, setF] = useState({ first_name: '', last_name: '', whatsapp: '', date_of_birth: '', email: '', pw: '', agree: false });
+  const [f, setF] = useState({ first_name: '', last_name: '', whatsapp: '', date_of_birth: '', gender: '', email: '', pw: '', agree: false });
   const [err, setErr] = useState<unknown>(null); const [busy, setBusy] = useState(false); const [done, setDone] = useState<string | null>(null);
   const set = (k: keyof typeof f, v: string | boolean) => setF((s) => ({ ...s, [k]: v }));
   async function submit(e: FormEvent) {
     e.preventDefault(); setErr(null);
     if (!toWaNumber(f.whatsapp)) { setErr(new Error('Please enter a valid WhatsApp number, for example 0803 123 4567.')); return; }
+    if (f.gender !== 'male' && f.gender !== 'female') { setErr(new Error('Please choose your gender.')); return; }
     setBusy(true);
     try {
       const r = await signUp(f.email.trim(), f.pw, {
         first_name: f.first_name.trim(), last_name: f.last_name.trim(), whatsapp: f.whatsapp.trim(),
-        date_of_birth: f.date_of_birth, assembly_slug: env.publicAssemblySlug,
+        date_of_birth: f.date_of_birth, gender: f.gender, assembly_slug: env.publicAssemblySlug,
       });
       setDone(r.needsConfirmation ? 'confirm' : 'ok');
     } catch (x) { setErr(x); } finally { setBusy(false); }
@@ -81,6 +82,7 @@ export function Register() {
           </div>
           <Field label="WhatsApp number" hint="We will send your activation code here. Example: 0803 123 4567"><Input required type="tel" inputMode="tel" autoComplete="tel" value={f.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} /></Field>
           <Field label="Date of birth"><Input required type="date" max={new Date().toISOString().slice(0, 10)} value={f.date_of_birth} onChange={(e) => set('date_of_birth', e.target.value)} /></Field>
+          <Field label="Gender"><Select required value={f.gender} onChange={(e) => set('gender', e.target.value)}><option value="">Choose</option><option value="male">Male</option><option value="female">Female</option></Select></Field>
           <Field label="Email"><Input type="email" required autoComplete="email" value={f.email} onChange={(e) => set('email', e.target.value)} /></Field>
           <Field label="Password" hint="At least 8 characters"><Input type="password" required minLength={8} autoComplete="new-password" value={f.pw} onChange={(e) => set('pw', e.target.value)} /></Field>
           <label className="flex items-start gap-2 text-xs text-gray-600"><input type="checkbox" required checked={f.agree} onChange={(e) => set('agree', e.target.checked)} className="mt-0.5 h-4 w-4 accent-brand-700" />I agree that the church office may use these details to set up my membership and message me on WhatsApp.</label>

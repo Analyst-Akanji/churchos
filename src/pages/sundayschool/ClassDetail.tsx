@@ -23,6 +23,7 @@ const shortDate = (iso: string) =>
   new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 const blankStudent = { first: '', last: '', gender: '', dob: '', group: 'child', gname: '', gphone: '' };
+interface StudentDetail { first_name: string; last_name: string; gender: string | null; date_of_birth: string | null; age_group: string; guardian_name: string | null; guardian_phone: string | null; has_login: boolean }
 
 export default function ClassDetail() {
   const { classId } = useParams();
@@ -34,6 +35,7 @@ export default function ClassDetail() {
   const [pick, setPick] = useState(''); const [staffRole, setStaffRole] = useState<'teacher' | 'secretary' | 'assistant'>('teacher');
   const [adding, setAdding] = useState(false); const [nf, setNf] = useState(blankStudent);
   const [err, setErr] = useState<unknown>(null); const [busy, setBusy] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null); const [ef, setEf] = useState(blankStudent); const [loadingEdit, setLoadingEdit] = useState(false);
 
   const classes = useClasses(true);
   const cls = (classes.data ?? []).find((c) => c.id === classId);
@@ -132,6 +134,31 @@ export default function ClassDetail() {
     else if (!data || data.length === 0) toast.err('Nothing was changed. You may not have permission for this class.');
     else void qc.invalidateQueries({ queryKey: ['roster'] });
   }
+  async function openEdit(memberId: string) {
+    setErr(null); setEf(blankStudent); setEditId(memberId); setLoadingEdit(true);
+    try {
+      const rows = await q<StudentDetail[]>(supabase.rpc('ss_get_student', { p_member: memberId }));
+      const s = rows[0];
+      if (!s) throw new Error('Student not found');
+      setEf({ first: s.first_name, last: s.last_name, gender: s.gender ?? '', dob: s.date_of_birth ?? '', group: s.age_group, gname: s.guardian_name ?? '', gphone: s.guardian_phone ?? '' });
+    } catch (e) {
+      toast.err(e instanceof Error ? e.message : 'Could not load the student');
+      setEditId(null);
+    }
+    setLoadingEdit(false);
+  }
+  async function saveEdit(e: FormEvent) {
+    e.preventDefault(); if (!editId) return; setBusy(true); setErr(null);
+    const { error } = await supabase.rpc('ss_update_student', {
+      p_member: editId, p_first: ef.first, p_last: ef.last, p_gender: ef.gender, p_dob: ef.dob || null,
+      p_age_group: ef.group, p_guardian_name: ef.gname, p_guardian_phone: ef.gphone,
+    });
+    setBusy(false);
+    if (error) { setErr(new Error(error.message)); return; }
+    toast.ok('Student updated'); setEditId(null);
+    void qc.invalidateQueries({ queryKey: ['roster'] });
+    void qc.invalidateQueries({ queryKey: ['ss-search'] });
+  }
   async function addStaff() {
     if (!pick) return;
     const { error } = await supabase.from('ss_class_staff').upsert({ assembly_id: assembly!.id, class_id: classId, member_id: pick, staff_role: staffRole, is_active: true }, { onConflict: 'class_id,member_id,staff_role' });
@@ -188,10 +215,14 @@ export default function ClassDetail() {
 
           <Card>
             {roster.isLoading ? <Spinner /> : active.length === 0 ? <Empty title="No students yet" /> : (
-              <Table head={['#', 'Name', 'Group', '']}>
+              <Table head={['#', 'Name', 'Group', 'Account', '']}>
                 {active.map((r, i) => (
                   <tr key={r.enrollment_id}><td className="px-3 py-2.5 text-gray-500">{i + 1}</td><td className="px-3 py-2.5 font-medium">{fullName(r)}</td><td className="px-3 py-2.5 capitalize">{r.age_group}</td>
-                    <td className="px-3 py-2.5 text-right"><Button size="sm" variant="ghost" onClick={() => void withdraw(r.enrollment_id)}>Withdraw</Button></td></tr>
+                    <td className="px-3 py-2.5">{r.has_login ? <Badge tone="green">Signed up</Badge> : <span className="text-xs text-gray-400">Not signed up</span>}</td>
+                    <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                      {(isSsLead || r.age_group !== 'adult') && <Button size="sm" variant="secondary" onClick={() => void openEdit(r.member_id)}>Edit</Button>}{' '}
+                      <Button size="sm" variant="ghost" onClick={() => void withdraw(r.enrollment_id)}>Withdraw</Button>
+                    </td></tr>
                 ))}
               </Table>
             )}
@@ -319,6 +350,28 @@ export default function ClassDetail() {
           {err != null && <ErrorBox error={err} />}
           <div className="flex gap-2"><Button type="submit" loading={busy}>Add and enrol</Button><Button type="button" variant="secondary" onClick={() => setAdding(false)}>Cancel</Button></div>
         </form>
+      </Modal>
+
+      <Modal open={!!editId} title="Edit student" onClose={() => setEditId(null)}>
+        {loadingEdit ? <Spinner /> : (
+          <form onSubmit={saveEdit} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="First name"><Input required value={ef.first} onChange={(e) => setEf({ ...ef, first: e.target.value })} /></Field>
+              <Field label="Last name"><Input required value={ef.last} onChange={(e) => setEf({ ...ef, last: e.target.value })} /></Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Gender"><Select value={ef.gender} onChange={(e) => setEf({ ...ef, gender: e.target.value })}><option value="">Not set</option><option value="male">Male</option><option value="female">Female</option></Select></Field>
+              <Field label="Group"><Select value={ef.group} onChange={(e) => setEf({ ...ef, group: e.target.value })}><option value="child">Child</option><option value="youth">Youth</option>{isSsLead && <option value="adult">Adult</option>}</Select></Field>
+            </div>
+            <Field label="Date of birth"><Input type="date" value={ef.dob} onChange={(e) => setEf({ ...ef, dob: e.target.value })} /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Parent or guardian"><Input value={ef.gname} onChange={(e) => setEf({ ...ef, gname: e.target.value })} /></Field>
+              <Field label="Their phone"><Input inputMode="tel" value={ef.gphone} onChange={(e) => setEf({ ...ef, gphone: e.target.value })} /></Field>
+            </div>
+            {err != null && <ErrorBox error={err} />}
+            <div className="flex gap-2"><Button type="submit" loading={busy}>Save changes</Button><Button type="button" variant="secondary" onClick={() => setEditId(null)}>Cancel</Button></div>
+          </form>
+        )}
       </Modal>
     </>
   );

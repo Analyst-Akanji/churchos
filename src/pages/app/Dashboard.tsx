@@ -8,6 +8,7 @@ import { withCache } from '@/lib/offline/cache';
 import { fmtDate, fmtTime } from '@/lib/format';
 import { usePendingRegistrations, type RegistrationRequest } from '@/lib/registrations';
 import { ProgrammeDays } from '@/components/ProgrammeBoard';
+import { MyAssignments } from '@/components/MyAssignments';
 import { addDays, toISO, type ProgrammeItem } from '@/lib/programme';
 import { Button, Card, ErrorBox, Field, Input, PageHeader, Spinner } from '@/components/ui';
 import { useToast } from '@/components/toast';
@@ -28,7 +29,7 @@ function ClaimInvite() {
     <Card title="Activate your account">
       <p className="mb-4 text-sm text-gray-600">Enter the activation code the church office sent to your WhatsApp. It connects this login to your member record. If you have not received one yet, please wait for the office to approve your registration.</p>
       <form onSubmit={submit} className="max-w-sm space-y-4">
-        <Field label="Activation code"><Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} maxLength={8} placeholder="e.g. K7M2QX9P" required /></Field>
+        <Field label="Activation code"><Input value={code} onChange={(e) => setCode(e.target.value.replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 8))} autoCapitalize="characters" autoComplete="one-time-code" placeholder="e.g. K7M2QX9P" required /></Field>
         {err != null && <ErrorBox error={err} />}
         <Button type="submit" loading={busy}>Link my account</Button>
       </form>
@@ -93,6 +94,7 @@ export default function Dashboard() {
           return <Link key={String(to)} to={String(to)} className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 text-center text-sm font-medium text-brand-900 shadow-sm hover:border-brand-200 hover:bg-brand-50"><I className="h-6 w-6 text-gold-600" />{String(label)}</Link>;
         })}
       </div>
+      <div className="mb-4 empty:hidden"><MyAssignments /></div>
       <div className="grid gap-4 md:grid-cols-2">
         <Card title="Next service">
           {next.isLoading ? <Spinner /> : next.data ? (
