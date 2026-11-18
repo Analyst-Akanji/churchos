@@ -105,7 +105,7 @@ export default function SessionEditor() {
     for (const c of criteria) {
       if (c.source === 'attendance' && at.status === 'present') p += Number(c.max_points);
       if (c.source === 'on_time' && at.status === 'present' && at.is_on_time) p += Number(c.max_points);
-      if (c.source === 'manual') p += scores[eid]?.[c.id] ?? 0;
+      if (c.source === 'manual' && at.status === 'present') p += scores[eid]?.[c.id] ?? 0;
     }
     return p;
   };
@@ -131,8 +131,14 @@ export default function SessionEditor() {
       payload: { ...base, enrollment_id: eid, status: next.status, is_on_time: next.status === 'present' && next.is_on_time, arrived_at: next.status === 'present' ? new Date().toISOString() : null },
     });
   }
-  const setStatus = (eid: string, s: AttStatus) => saveAtt(eid, { status: s, is_on_time: s === 'present' ? att[eid]?.is_on_time ?? false : false });
-  const toggleOnTime = (eid: string) => saveAtt(eid, { status: 'present', is_on_time: att[eid]?.status === 'present' ? !att[eid].is_on_time : true });
+  const setStatus = (eid: string, s: AttStatus) => {
+    saveAtt(eid, { status: s, is_on_time: s === 'present' ? att[eid]?.is_on_time ?? false : false });
+    if (s !== 'present') clearScores(eid); // a student who was not there gets no marks
+  };
+  function clearScores(eid: string) {
+    const cur = scores[eid]; if (!cur) return;
+    for (const c of manual) if (cur[c.id]) setScore(eid, c, '0');
+  }
   function setScore(eid: string, c: Criterion, raw: string) {
     const n = raw === '' ? 0 : Math.max(0, Math.min(Number(c.max_points), Number(raw)));
     if (Number.isNaN(n)) return;
@@ -215,7 +221,7 @@ export default function SessionEditor() {
           <div className="-mx-4 overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
-                <tr><th className="px-3 py-2 text-left">Student</th><th className="px-3 py-2 text-left">Attendance</th><th className="px-3 py-2">On time</th>
+                <tr><th className="px-3 py-2 text-left">Student</th><th className="px-3 py-2 text-left">Attendance</th>
                   {manual.map((c) => <th key={c.id} className="px-2 py-2">{c.label}<div className="font-normal normal-case text-gray-400">max {Number(c.max_points)}</div></th>)}
                   <th className="px-3 py-2">Pts</th></tr>
               </thead>
@@ -233,10 +239,9 @@ export default function SessionEditor() {
                           ))}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-center"><input type="checkbox" className="h-5 w-5 accent-brand-700" disabled={readOnly || s?.status === 'absent' || s?.status === 'excused'} checked={!!s?.is_on_time && s.status === 'present'} onChange={() => toggleOnTime(r.enrollment_id)} aria-label="On time" /></td>
                       {manual.map((c) => (
                         <td key={c.id} className="px-2 py-2 text-center">
-                          <input type="number" inputMode="decimal" min={0} max={Number(c.max_points)} step="0.5" disabled={readOnly} value={scores[r.enrollment_id]?.[c.id] ?? ''} onChange={(e) => setScore(r.enrollment_id, c, e.target.value)}
+                          <input type="number" inputMode="decimal" min={0} max={Number(c.max_points)} step="0.5" disabled={readOnly || s?.status === 'absent' || s?.status === 'excused'} value={scores[r.enrollment_id]?.[c.id] ?? ''} onChange={(e) => setScore(r.enrollment_id, c, e.target.value)}
                             className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-center disabled:bg-gray-50" aria-label={c.label} />
                         </td>
                       ))}
